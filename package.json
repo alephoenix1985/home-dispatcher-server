@@ -1,0 +1,29 @@
+{
+  "name": "psf-aws-mongo-event-driven-service",
+  "version": "1.0.0",
+  "description": "A PSF service that interacts with MongoDB based on AWS SQS/SNS events.",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "db:seed": "node src/migrations/auth.seed.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-cloudwatch": "^3.830.0",
+    "@aws-sdk/client-sns": "^3.592.0",
+    "@aws-sdk/client-sqs": "^3.592.0",
+    "axios": "1.11.0",
+    "lodash": "^4.17.21",
+    "mongodb": "^6.18.0",
+    "psf-core": "file:./core",
+    "winston": "^3.13.0",
+    "winston-cloudwatch": "^6.2.0"
+  },
+  "devDependencies": {
+    "dotenv": "^16.4.5",
+    "mongodb-atlas-api-client": "^4.7.0",
+    "mongoose": "^8.4.1",
+    "nodemon": "^3.1.2"
+  }
+}

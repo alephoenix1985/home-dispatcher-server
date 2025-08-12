@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  config-server-1:
+    image: mongo:latest
+    container_name: config-server-1
+    command: mongod --configsvr --replSet csrs --port 27017 --bind_ip_all
+    volumes:
+      - ./mongo-data/config-1:/data/db
+    networks:
+      - mongo-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  shard1-a:
+    image: mongo:latest
+    container_name: shard1-a
+    command: mongod --shardsvr --replSet rs-shard1 --port 27017 --bind_ip_all
+    volumes:
+      - ./mongo-data/shard1-a:/data/db
+    networks:
+      - mongo-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  shard2-a:
+    image: mongo:latest
+    container_name: shard2-a
+    command: mongod --shardsvr --replSet rs-shard2 --port 27017 --bind_ip_all
+    volumes:
+      - ./mongo-data/shard2-a:/data/db
+    networks:
+      - mongo-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  mongos-router:
+    image: mongo:latest
+    container_name: mongos-router
+    command: mongos --configdb csrs/config-server-1:27017 --bind_ip_all --port 27017
+    ports:
+      - "27017:27017"
+    networks:
+      - mongo-net
+    depends_on:
+      config-server-1:
+        condition: service_healthy # Espera a que el config server esté sano
+
+  # --- NUEVO SERVICIO INICIALIZADOR ---
+  mongo-cluster-initializer:
+    build: . # Construye la imagen usando el Dockerfile en la carpeta actual
+    networks:
+      - mongo-net
+    volumes:
+      # Montamos el socket de Docker para que el script pueda ejecutar comandos 'docker'
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      mongos-router:
+        condition: service_started # Espera a que el router inicie
+      shard1-a:
+        condition: service_healthy # Espera a que el shard 1 esté sano
+      shard2-a:
+        condition: service_healthy # Espera a que el shard 2 esté sano
+
+networks:
+  mongo-net:
+    driver: bridge
