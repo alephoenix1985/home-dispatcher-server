@@ -5,7 +5,7 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 COPY core ./core/
 
-RUN npm ci --only=production
+RUN npm i --only=production
 
 COPY . .
 

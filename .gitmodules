@@ -1,4 +1,4 @@
 [submodule "core"]
 	path = core
-	url = https://github.com/phoenix-software-factory/psf-core.git
+	url = https://github.com/phoenix-software-factory/psf-core
 	branch = main
