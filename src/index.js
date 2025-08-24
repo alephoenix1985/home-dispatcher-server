@@ -1,7 +1,8 @@
-// index.js
-import {startListening} from './listeners/sqs.listener.js';
-import {config} from './config/index.js';
 import {logSection} from "psf-core/services/logger.service.js";
+import {startSqsListener} from "psf-core/services/aws/aws-sqs.service.js";
+import {coreEnv} from "psf-core/config/env.config.js";
+import {processResultMessage} from "./helpers/request.helper.js";
+import {envConfig} from "./config/env.config.js";
 
 const logger = logSection('MAIN');
 /**
@@ -10,11 +11,10 @@ const logger = logSection('MAIN');
  */
 
 const main = async () => {
-    logger.info(`Application starting in ${config.nodeEnv} mode...`);
-    logger.info(`Debug mode is ${config.debugMode ? 'ON' : 'OFF'}.`);
-
+    logger.info(`Application starting in ${envConfig.app.nodeEnv} mode...`);
+    logger.info(`Debug mode is ${envConfig.app.debugMode ? 'ON' : 'OFF'}.`);
     // 2. Start listening for SQS messages
-    startListening();
+    startSqsListener(coreEnv.aws.sqs.queueName.dbRequest, processResultMessage)
 };
 
 main().catch(error => {

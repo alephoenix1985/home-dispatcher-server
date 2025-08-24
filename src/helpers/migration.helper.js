@@ -1,11 +1,9 @@
-// D:/SynologyDrive/Desarrollos/PSD/NAS/p-sf/db/src/helpers/migration.helper.js
-
 import getClient from 'mongodb-atlas-api-client';
 import 'dotenv/config';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { logSection } from '../../core/services/logger.service.js';
+import { logSection } from 'psf-core/services/logger.service.js';
 
 const logger = logSection('ATLAS-MIGRATION');
 

@@ -6,22 +6,20 @@
   "type": "module",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "nodemon src/index.js",
+    "start:dev": "npm run start -- dev",
+    "start:prod": "npm run start -- prod",
+    "dev": "nodemon src/index.js dev",
     "db:seed": "node src/migrations/auth.seed.js",
+    "db:seed:dev": "npm run db:seed -- dev",
+    "db:seed:prod": "npm run db:seed -- prod",
     "compose:generate": "node scripts/generate-compose.js",
-    "compose:generate-prod": "npm run compose:generate -- prod",
-    "compose:generate-dev": "npm run compose:generate -- dev"
+    "compose:generate:prod": "npm run compose:generate -- prod",
+    "compose:generate:dev": "npm run compose:generate -- dev"
   },
   "dependencies": {
-    "@aws-sdk/client-cloudwatch": "^3.830.0",
-    "@aws-sdk/client-sns": "^3.592.0",
-    "@aws-sdk/client-sqs": "^3.592.0",
-    "axios": "1.11.0",
     "lodash": "^4.17.21",
     "mongodb": "^6.18.0",
-    "psf-core": "file:./core",
-    "winston": "^3.13.0",
-    "winston-cloudwatch": "^6.2.0"
+    "psf-core": "file:./core"
   },
   "devDependencies": {
     "dotenv": "^16.6.1",

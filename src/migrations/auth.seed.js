@@ -1,6 +1,7 @@
 import {MongoClient, ObjectId} from 'mongodb';
+import { envConfig } from '../config/env.config.js';
 
-const MONGODB_URI = process.env.MONGO_URI || 'mongodb://localhost:27017';
+const MONGODB_URI = envConfig.db.mongo.uri;
 const DB_NAME = 'psfAuth';
 
 /**
