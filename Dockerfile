@@ -5,6 +5,8 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 COPY core ./core/
 
+RUN apk add --no-cache build-base g++ cairo-dev jpeg-dev pango-dev giflib-dev
+
 RUN npm i --only=production
 
 COPY . .
