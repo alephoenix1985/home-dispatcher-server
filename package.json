@@ -7,7 +7,10 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "db:seed": "node src/migrations/auth.seed.js"
+    "db:seed": "node src/migrations/auth.seed.js",
+    "compose:generate": "node scripts/generate-compose.js",
+    "compose:generate-prod": "npm run compose:generate -- prod",
+    "compose:generate-dev": "npm run compose:generate -- dev"
   },
   "dependencies": {
     "@aws-sdk/client-cloudwatch": "^3.830.0",
@@ -23,7 +26,6 @@
   "devDependencies": {
     "dotenv": "^16.4.5",
     "mongodb-atlas-api-client": "^4.7.0",
-    "mongoose": "^8.4.1",
     "nodemon": "^3.1.2"
   }
 }

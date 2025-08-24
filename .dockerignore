@@ -1,4 +1,7 @@
 node_modules
 .git
 .env
+.env.example
 Dockerfile
+scripts/
+docker-compose.generated.yml
