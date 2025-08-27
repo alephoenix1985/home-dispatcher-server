@@ -86,15 +86,4 @@ export const envConfig = {
     redis: {
         defaultTtl: process.env.REDIS_DEFAULT_TTL_SECONDS ? parseInt(process.env.REDIS_DEFAULT_TTL_SECONDS, 10) : 300, // 5 minutes
     },
-
-    /**
-     * SQS Polling behavior settings
-     */
-    polling: {
-        maxNumberOfMessages: parseInt(process.env.POLLING_MAX_NUMBER_OF_MESSAGES || '10', 10),
-        visibilityTimeout: parseInt(process.env.POLLING_VISIBILITY_TIMEOUT  || '30', 10),
-        waitTimeSeconds: parseInt(process.env.POLLING_WAIT_TIME_SECONDS || '20', 10),
-        maxRetries: parseInt(process.env.SQS_MAX_RETRIES, 10) || 3,
-    },
-
 };

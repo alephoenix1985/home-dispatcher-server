@@ -6,19 +6,20 @@ import {fileURLToPath} from 'url';
  * @fileoverview This script generates a docker-compose.yml file for production
  * by injecting environment variables from a .env file into a template.
  */
-
+const APP_ID = 'psf-db'
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(__dirname, '..');
 
 const outputPath = path.join(projectRoot, 'docker-compose.generated.yml');
 
-const defaultComposeTemplate = `version: '3.8'
-
+const defaultComposeTemplate = `
 services:
   app:
-    image: ghcr.io/phoenix-software-factory/psf-db:latest
-    container_name: psf-db-service
+    image: ghcr.io/phoenix-software-factory/${APP_ID}:latest
+    container_name: ${APP_ID}-service
     restart: always
+    labels:
+      - "com.centurylinklabs.watchtower.scope=<SCOPE_PLACEHOLDER>"
     # The environment variables below will be generated from your .env file.
     environment:
 
@@ -31,7 +32,7 @@ services:
     environment:
       - WATCHTOWER_CLEANUP=true
       - WATCHTOWER_INCLUDE_RESTARTING=true
-    command: --interval 300
+    command: --interval 300 --scope <SCOPE_PLACEHOLDER>
 `;
 
 /**
@@ -100,15 +101,21 @@ const generateCompose = () => {
 
     console.log(`Generating docker-compose file for environment: '${tagSuffix}' using ${path.basename(envPath)}`);
 
-    const imageName = `ghcr.io/phoenix-software-factory/psf-db-${tagSuffix}:latest`;
-    const containerName = `psf-db-${tagSuffix}-service`;
+    const imageName = `ghcr.io/phoenix-software-factory/${APP_ID}-${tagSuffix}:latest`;
+    const appContainerName = `${APP_ID}-${tagSuffix}-service`;
+    const watchtowerContainerName = `${APP_ID}-${tagSuffix}-watchtower`;
     const templateContent = defaultComposeTemplate.replace(
-        'ghcr.io/phoenix-software-factory/psf-db:latest',
+        `ghcr.io/phoenix-software-factory/${APP_ID}:latest`,
         imageName
     ).replace(
-        'container_name: psf-db-service',
-        `container_name: ${containerName}`
+        `container_name: ${APP_ID}-service`,
+        `container_name: ${appContainerName}`
+    ).replace(
+        'container_name: watchtower',
+        `container_name: ${watchtowerContainerName}`
     );
+
+    const finalTemplate = templateContent.replace(/<SCOPE_PLACEHOLDER>/g, watchtowerContainerName);
 
     const envContent = fs.readFileSync(envPath, 'utf-8');
     const envVars = parseEnv(envContent);
@@ -122,7 +129,7 @@ const generateCompose = () => {
 
     const newEnvironmentBlock = `    environment:\n${environmentLines.join('\n')}`;
 
-    let outputContent = templateContent.replace(
+    let outputContent = finalTemplate.replace(
         /^\s*environment:(?:.|\n)*?(?=\n\S|$)/m,
         newEnvironmentBlock
     );
