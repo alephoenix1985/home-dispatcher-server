@@ -134,8 +134,8 @@ const generateCompose = () => {
         newEnvironmentBlock
     );
 
-    outputContent = outputContent.replace(/(MONGO_URI=mongodb:\/\/)([^/:]+)(.*)/g, '$1localhost$3');
-    outputContent = outputContent.replace(/(REDIS_URL=redis:\/\/)([^/:]+)(.*)/g, '$1localhost$3');
+    outputContent = outputContent.replace(/(MONGO_URI=mongodb:\/\/)([^/:]+)(.*)/g, '$1mongos-router$3');
+    outputContent = outputContent.replace(/(REDIS_URL=redis:\/\/)([^/:]+)(.*)/g, '$1redis-server-secure$3');
     fs.writeFileSync(outputPath, outputContent, 'utf-8');
 
     console.log(`Successfully generated ${outputPath}`);
