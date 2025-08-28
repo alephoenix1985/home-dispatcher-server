@@ -38,3 +38,20 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: ghcr.io/${{ github.repository }}-${{ steps.set_tag.outputs.suffix }}:latest
+          load: true
+
+      - name: Test container startup
+        run: |
+          docker run -d --rm --name test-run ghcr.io/${{ github.repository }}-${{ steps.set_tag.outputs.suffix }}:latest
+          echo "Waiting for container to start..."
+          sleep 15
+          echo "Checking container logs:"
+          docker logs test-run
+          echo "Checking container status:"
+          if ! docker ps -f "name=test-run" --format '{{.Names}}' | grep -q test-run; then
+            echo "Container failed to start or crashed."
+            exit 1
+          else
+            echo "Container is running. Test passed."
+            docker stop test-run
+          fi
