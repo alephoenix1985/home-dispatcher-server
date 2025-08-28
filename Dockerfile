@@ -7,6 +7,8 @@ COPY core ./core/
 
 RUN apk add --no-cache build-base g++ cairo-dev jpeg-dev pango-dev giflib-dev
 
+RUN ls
+
 RUN npm i --only=production
 
 COPY . .
