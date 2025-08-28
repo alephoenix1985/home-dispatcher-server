@@ -24,6 +24,28 @@ jobs:
             echo "suffix=$(echo ${{ github.ref_name }} | sed 's/[^a-zA-Z0-9.-]/-/g')" >> $GITHUB_OUTPUT
           fi
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies and test startup
+        run: |
+          npm install
+          echo "Attempting to start the application for a smoke test..."
+          MONGO_URI="mongodb://test-mongo:27017/psfAuth" \
+          SQS_REQUESTS_QUEUE="dummy-queue" \
+          npm run start &
+          PID=$!
+          sleep 15
+          if ps -p $PID > /dev/null; then
+            echo "Application started successfully. Test passed."
+            kill $PID
+          else
+            echo "Application failed to start or crashed."
+            exit 1
+          fi
+
       - name: Log in to the GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -38,20 +60,3 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: ghcr.io/${{ github.repository }}-${{ steps.set_tag.outputs.suffix }}:latest
-          load: true
-
-      - name: Test container startup
-        run: |
-          docker run -d --rm --name test-run ghcr.io/${{ github.repository }}-${{ steps.set_tag.outputs.suffix }}:latest
-          echo "Waiting for container to start..."
-          sleep 15
-          echo "Checking container logs:"
-          docker logs test-run
-          echo "Checking container status:"
-          if ! docker ps -f "name=test-run" --format '{{.Names}}' | grep -q test-run; then
-            echo "Container failed to start or crashed."
-            exit 1
-          else
-            echo "Container is running. Test passed."
-            docker stop test-run
-          fi
