@@ -24,11 +24,6 @@ jobs:
             echo "suffix=$(echo ${{ github.ref_name }} | sed 's/[^a-zA-Z0-9.-]/-/g')" >> $GITHUB_OUTPUT
           fi
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
       - name: Install dependencies and test startup
         run: |
           npm install
