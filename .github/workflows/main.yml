@@ -25,21 +25,10 @@ jobs:
           fi
 
       - name: Install dependencies and test startup
-        run: |
-          npm install
-          echo "Attempting to start the application for a smoke test..."
-          MONGO_URI="mongodb://test-mongo:27017/psfAuth" \
-          SQS_REQUESTS_QUEUE="dummy-queue" \
-          npm run start &
-          PID=$!
-          sleep 15
-          if ps -p $PID > /dev/null; then
-            echo "Application started successfully. Test passed."
-            kill $PID
-          else
-            echo "Application failed to start or crashed."
-            exit 1
-          fi
+        run: npm install
+
+      - name: Install dependencies and test startup
+        run: npm run start
 
       - name: Log in to the GitHub Container Registry
         uses: docker/login-action@v3
