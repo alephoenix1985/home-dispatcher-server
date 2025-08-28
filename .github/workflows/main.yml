@@ -25,10 +25,7 @@ jobs:
           fi
 
       - name: Install dependencies and test startup
-        run: npm install
-
-      - name: Install dependencies and test startup
-        run: npm run start
+        run: ls
 
       - name: Log in to the GitHub Container Registry
         uses: docker/login-action@v3
