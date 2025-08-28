@@ -9,7 +9,7 @@ RUN apk add --no-cache build-base g++ cairo-dev jpeg-dev pango-dev giflib-dev
 
 RUN npm i --only=production
 
-RUN ls -laR
+RUN echo "Final directory structure before copying src:" && ls -la
 
 COPY src ./src
 
