@@ -32,6 +32,8 @@ services:
     environment:
       - WATCHTOWER_CLEANUP=true
       - WATCHTOWER_INCLUDE_RESTARTING=true
+      - REPO_USER=<GH_USER>
+      - REPO_PASS=<GH_PAT>
     command: --interval 300 --scope <SCOPE_PLACEHOLDER>
 `;
 
@@ -115,10 +117,12 @@ const generateCompose = () => {
         `container_name: ${watchtowerContainerName}`
     );
 
-    const finalTemplate = templateContent.replace(/<SCOPE_PLACEHOLDER>/g, watchtowerContainerName);
-
     const envContent = fs.readFileSync(envPath, 'utf-8');
     const envVars = parseEnv(envContent);
+
+    const finalTemplate = templateContent.replace(/<SCOPE_PLACEHOLDER>/g, watchtowerContainerName)
+        .replace(/<GH_USER>/g, envVars.GH_USER || '')
+        .replace(/<GH_PAT>/g, envVars.GH_PAT || '');
 
     const environmentLines = [];
     for (const key in envVars) {

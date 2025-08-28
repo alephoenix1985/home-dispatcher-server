@@ -17,13 +17,13 @@
     "compose:generate:dev": "npm run compose:generate -- dev"
   },
   "dependencies": {
+    "dotenv": "^16.6.1",
     "lodash": "^4.17.21",
     "mongodb": "^6.18.0",
     "psf-core": "file:./core",
-    "dotenv": "^16.6.1"
+    "winston": "^3.13.0"
   },
   "devDependencies": {
-    "mongodb-atlas-api-client": "^4.7.0",
     "nodemon": "^3.1.2"
   }
 }

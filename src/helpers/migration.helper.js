@@ -1,4 +1,4 @@
-import getClient from 'mongodb-atlas-api-client';
+// import getClient from 'mongodb-atlas-api-client';
 import 'dotenv/config';
 import { promises as fs } from 'fs';
 import path from 'path';
