@@ -1,4 +1,4 @@
-import {logSection} from "core/services/logger.service.cjs";
+import {logSection} from "psf-core/services/logger.service.cjs";
 import {startSqsListener} from "psf-core/services/aws/aws-sqs.service.js";
 import {coreEnv} from "psf-core/config/core-env.config.js";
 import {processResultMessage} from "./helpers/request.helper.js";

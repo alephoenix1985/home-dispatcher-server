@@ -26,8 +26,6 @@ jobs:
 
       - name: Show Directory
         run: ls
-      - name: Show user
-        run: echo ${{ github.repository_owner }}
 
       - name: Log in to the GitHub Container Registry
         uses: docker/login-action@v3
