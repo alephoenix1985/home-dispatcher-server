@@ -1,5 +1,5 @@
 import { dataController } from '../controllers/data.controller.js';
-import { logSection } from 'core/services/logger.service.js';
+import { logSection } from 'psf-core/services/logger.service.js';
 import { envConfig } from '../config/env.config.js';
 import { cache as redisClient } from 'psf-core/services/cache.service.js';
 

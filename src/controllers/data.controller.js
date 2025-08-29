@@ -1,5 +1,5 @@
 import {db} from '../services/mongo.service.js';
-import {logSection} from 'core/services/logger.service.js';
+import {logSection} from 'psf-core/services/logger.service.js';
 
 const logger = logSection('DATA-CONTROLLER');
 
