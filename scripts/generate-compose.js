@@ -32,8 +32,7 @@ services:
     environment:
       - WATCHTOWER_CLEANUP=true
       - WATCHTOWER_INCLUDE_RESTARTING=true
-      - REPO_USER=<GH_USER>
-      - REPO_PASS=<GH_PAT>
+      - WATCHTOWER_DOCKERCFG_CONTENT='<DOCKER_CONFIG_JSON_PLACEHOLDER>'
     command: --interval 300 --scope <SCOPE_PLACEHOLDER>
 `;
 
@@ -120,9 +119,27 @@ const generateCompose = () => {
     const envContent = fs.readFileSync(envPath, 'utf-8');
     const envVars = parseEnv(envContent);
 
-    const finalTemplate = templateContent.replace(/<SCOPE_PLACEHOLDER>/g, watchtowerContainerName)
-        .replace(/<GH_USER>/g, envVars.GH_USER || '')
-        .replace(/<GH_PAT>/g, envVars.GH_PAT || '');
+    const ghUser = envVars.GH_USER;
+    const ghPat = envVars.GH_PAT;
+    let dockerConfigJson = '';
+
+    if (ghUser && ghPat) {
+        const authString = Buffer.from(`${ghUser}:${ghPat}`).toString('base64');
+        const dockerConfig = {
+            auths: {
+                'ghcr.io': {
+                    auth: authString,
+                },
+            },
+        };
+        dockerConfigJson = JSON.stringify(dockerConfig);
+    } else {
+        console.warn('Warning: GH_USER and/or GH_PAT not found in environment file. Watchtower may fail to pull from private GHCR images.');
+    }
+
+    const finalTemplate = templateContent
+        .replace(/<SCOPE_PLACEHOLDER>/g, watchtowerContainerName)
+        .replace('<DOCKER_CONFIG_JSON_PLACEHOLDER>', dockerConfigJson);
 
     const environmentLines = [];
     for (const key in envVars) {
