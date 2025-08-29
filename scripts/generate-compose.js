@@ -29,13 +29,17 @@ services:
     restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./watchtower-config.json:/config.json:ro
 
     environment:
       - WATCHTOWER_CLEANUP=true
       - WATCHTOWER_INCLUDE_RESTARTING=true
-      - WATCHTOWER_DOCKER_CONFIG=/config.json
     command: --interval 300 --scope <SCOPE_PLACEHOLDER>
+    networks:
+      - shared-net
+      
+networks:
+  shared-net:
+    external: true
 `;
 
 /**
