@@ -1,5 +1,5 @@
 import {MongoClient, ObjectId} from 'mongodb';
-import {logSection} from 'psf-core/services/logger.service.cjs';
+import {logSection} from 'core/services/logger.service.js';
 import {envConfig} from "../config/env.config.js";
 
 const logger = logSection('MONGO');

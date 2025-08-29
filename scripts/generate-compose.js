@@ -29,16 +29,18 @@ services:
     restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./watchtower-config.json:/config.json:ro
+
     environment:
       - WATCHTOWER_CLEANUP=true
       - WATCHTOWER_INCLUDE_RESTARTING=true
-      - WATCHTOWER_DOCKERCFG_CONTENT='<DOCKER_CONFIG_JSON_PLACEHOLDER>'
+      - WATCHTOWER_DOCKER_CONFIG=/config.json
     command: --interval 300 --scope <SCOPE_PLACEHOLDER>
 `;
 
 /**
  * Parses the content of a .env file into a key-value object.
- * @param {string} fileContent The content of the .env file.
+ * @param {string} fileContent The content of a .env file.
  * @returns {Object<string, string>} An object with the parsed environment variables.
  */
 const parseEnv = (fileContent) => {
@@ -105,6 +107,7 @@ const generateCompose = () => {
     const imageName = `ghcr.io/phoenix-software-factory/${APP_ID}-${tagSuffix}:latest`;
     const appContainerName = `${APP_ID}-${tagSuffix}-service`;
     const watchtowerContainerName = `${APP_ID}-${tagSuffix}-watchtower`;
+
     const templateContent = defaultComposeTemplate.replace(
         `ghcr.io/phoenix-software-factory/${APP_ID}:latest`,
         imageName
@@ -119,28 +122,9 @@ const generateCompose = () => {
     const envContent = fs.readFileSync(envPath, 'utf-8');
     const envVars = parseEnv(envContent);
 
-    const ghUser = envVars.GH_USER;
-    const ghPat = envVars.GH_PAT;
-    let dockerConfigJson = '';
-
-    if (ghUser && ghPat) {
-        const authString = Buffer.from(`${ghUser}:${ghPat}`).toString('base64');
-        const dockerConfig = {
-            auths: {
-                'ghcr.io': {
-                    auth: authString,
-                },
-            },
-        };
-        dockerConfigJson = JSON.stringify(dockerConfig);
-    } else {
-        console.warn('Warning: GH_USER and/or GH_PAT not found in environment file. Watchtower may fail to pull from private GHCR images.');
-    }
-
     const finalTemplate = templateContent
-        .replace(/<SCOPE_PLACEHOLDER>/g, watchtowerContainerName)
-        .replace('<DOCKER_CONFIG_JSON_PLACEHOLDER>', dockerConfigJson);
-
+        .replace(/<SCOPE_PLACEHOLDER>/g, watchtowerContainerName);
+    
     const environmentLines = [];
     for (const key in envVars) {
         if (Object.prototype.hasOwnProperty.call(envVars, key)) {
@@ -150,7 +134,9 @@ const generateCompose = () => {
 
     const newEnvironmentBlock = `    environment:\n${environmentLines.join('\n')}`;
 
-    let outputContent = finalTemplate.replace(
+    // Use a variable for the host path to make it clear and easy to change.
+    const watchtowerConfigHostPath = './watchtower-config.json';
+    let outputContent = finalTemplate.replace( // Replace app environment
         /^\s*environment:(?:.|\n)*?(?=\n\S|$)/m,
         newEnvironmentBlock
     );

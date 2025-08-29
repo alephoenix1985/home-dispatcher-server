@@ -3,7 +3,7 @@ import 'dotenv/config';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { logSection } from 'psf-core/services/logger.service.cjs';
+import { logSection } from 'core/services/logger.service.js';
 
 const logger = logSection('ATLAS-MIGRATION');
 
