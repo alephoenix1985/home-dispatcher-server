@@ -1,5 +1,5 @@
 {
-  "name": "psf-aws-mongo-event-driven-service",
+  "name": "psf-db",
   "version": "1.0.0",
   "description": "A PSF service that interacts with MongoDB based on AWS SQS/SNS events.",
   "main": "src/index.js",
@@ -12,7 +12,7 @@
     "db:seed": "node src/migrations/auth.seed.js",
     "db:seed:dev": "npm run db:seed -- dev",
     "db:seed:prod": "npm run db:seed -- prod",
-    "compose:generate": "node scripts/generate-compose.js",
+    "compose:generate": "node core/scripts/generate-compose.js",
     "compose:generate:prod": "npm run compose:generate -- prod",
     "compose:generate:dev": "npm run compose:generate -- dev",
     "wt-config:generate": "node scripts/generate-watchtower-config.js",
