@@ -31,20 +31,14 @@ services:
     restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    secrets:
-      - source: watchtower_config
-        target: /config.json
+      - /root/.docker/config.json:/config.json
     environment:
       - WATCHTOWER_CLEANUP=true
       - WATCHTOWER_INCLUDE_RESTARTING=true
-    command: --interval 300 --scope <SCOPE_PLACEHOLDER>
+    command: --interval 60 --scope <SCOPE_PLACEHOLDER>
     networks:
       - shared-net
       
-secrets:
-  watchtower_config:
-    file: ./watchtower-config.json
-
 networks:
   shared-net:
     external: true
