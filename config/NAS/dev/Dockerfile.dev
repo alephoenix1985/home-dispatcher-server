@@ -1,0 +1,5 @@
+FROM mongo:latest
+
+COPY init-dev.sh /init-dev.sh
+RUN chmod +x /init-dev.sh
+CMD ["/init-dev.sh"]

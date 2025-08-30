@@ -1,0 +1,235 @@
+services:
+  prod-cfg1:
+    image: mongo:latest
+    container_name: prod-cfg1
+    command: mongod --configsvr --replSet rs-prod-cfg --port 27017 --bind_ip_all
+    volumes:
+      - ./mongo-data/prod-cfg1:/data/db
+    ports:
+      - "37021:27017"
+    networks:
+      - shared-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  prod-cfg2:
+    image: mongo:latest
+    container_name: prod-cfg2
+    command: mongod --configsvr --replSet rs-prod-cfg --port 27017 --bind_ip_all
+    volumes:
+      - ./mongo-data/prod-cfg2:/data/db
+    ports:
+      - "37022:27017"
+    networks:
+      - shared-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  prod-cfg3:
+    image: mongo:latest
+    container_name: prod-cfg3
+    command: mongod --configsvr --replSet rs-prod-cfg --port 27017 --bind_ip_all
+    volumes:
+      - ./mongo-data/prod-cfg3:/data/db
+    ports:
+      - "37023:27017"
+    networks:
+      - shared-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  prod-shard1a:
+    image: mongo:latest
+    container_name: prod-shard1a
+    command: mongod --shardsvr --replSet rs-prod-shard1 --port 27017 --bind_ip_all
+    volumes:
+      - ./mongo-data/prod-shard1a:/data/db
+    ports:
+      - "37031:27017"
+    networks:
+      - shared-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  prod-shard1b:
+    image: mongo:latest
+    container_name: prod-shard1b
+    command: mongod --shardsvr --replSet rs-prod-shard1 --port 27017 --bind_ip_all
+    volumes:
+      - ./mongo-data/prod-shard1b:/data/db
+    ports:
+      - "37032:27017"
+    networks:
+      - shared-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  prod-shard2a:
+    image: mongo:latest
+    container_name: prod-shard2a
+    command: mongod --shardsvr --replSet rs-prod-shard2 --port 27017 --bind_ip_all
+    volumes:
+      - ./mongo-data/prod-shard2a:/data/db
+    ports:
+      - "37041:27017"
+    networks:
+      - shared-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  prod-shard2b:
+    image: mongo:latest
+    container_name: prod-shard2b
+    command: mongod --shardsvr --replSet rs-prod-shard2 --port 27017 --bind_ip_all
+    volumes:
+      - ./mongo-data/prod-shard2b:/data/db
+    ports:
+      - "37042:27017"
+    networks:
+      - shared-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  prod-shard3a:
+    image: mongo:latest
+    container_name: prod-shard3a
+    command: mongod --shardsvr --replSet rs-prod-shard3 --port 27017 --bind_ip_all
+    volumes:
+      - ./mongo-data/prod-shard3a:/data/db
+    ports:
+      - "37051:27017"
+    networks:
+      - shared-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  prod-shard3b:
+    image: mongo:latest
+    container_name: prod-shard3b
+    command: mongod --shardsvr --replSet rs-prod-shard3 --port 27017 --bind_ip_all
+    volumes:
+      - ./mongo-data/prod-shard3b:/data/db
+    ports:
+      - "37052:27017"
+    networks:
+      - shared-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  prod-shard4a:
+    image: mongo:latest
+    container_name: prod-shard4a
+    command: mongod --shardsvr --replSet rs-prod-shard4 --port 27017 --bind_ip_all
+    volumes:
+      - ./mongo-data/prod-shard4a:/data/db
+    ports:
+      - "37061:27017"
+    networks:
+      - shared-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  prod-shard4b:
+    image: mongo:latest
+    container_name: prod-shard4b
+    command: mongod --shardsvr --replSet rs-prod-shard4 --port 27017 --bind_ip_all
+    volumes:
+      - ./mongo-data/prod-shard4b:/data/db
+    ports:
+      - "37062:27017"
+    networks:
+      - shared-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  prod-mongos:
+    image: mongo:latest
+    container_name: prod-mongos
+    command: mongos --configdb rs-prod-cfg/prod-cfg1:27017,prod-cfg2:27017,prod-cfg3:27017 --bind_ip_all
+    ports:
+      - "37017:27017"
+    networks:
+      - shared-net
+    depends_on:
+      prod-cfg1:
+        condition: service_healthy
+      prod-cfg2:
+        condition: service_healthy
+      prod-cfg3:
+        condition: service_healthy
+
+  prod-init:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    environment:
+      - MONGO_HOST=192.168.1.37
+    networks:
+      - shared-net
+    depends_on:
+      prod-mongos:
+        condition: service_started
+      prod-shard1a:
+        condition: service_healthy
+      prod-shard1b:
+        condition: service_healthy
+      prod-shard2a:
+        condition: service_healthy
+      prod-shard2b:
+        condition: service_healthy
+      prod-shard3a:
+        condition: service_healthy
+      prod-shard3b:
+        condition: service_healthy
+      prod-shard4a:
+        condition: service_healthy
+      prod-shard4b:
+        condition: service_healthy
+
+networks:
+  shared-net:
+    driver: bridge

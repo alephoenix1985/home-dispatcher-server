@@ -9,15 +9,12 @@
     "start:dev": "npm run start -- dev",
     "start:prod": "npm run start -- prod",
     "dev": "nodemon src/index.js dev",
-    "db:seed": "node src/migrations/auth.seed.js",
+    "db:seed": "node scripts/run-migrations.js",
     "db:seed:dev": "npm run db:seed -- dev",
     "db:seed:prod": "npm run db:seed -- prod",
     "compose:generate": "node core/scripts/generate-compose.js",
     "compose:generate:prod": "npm run compose:generate -- prod",
-    "compose:generate:dev": "npm run compose:generate -- dev",
-    "wt-config:generate": "node scripts/generate-watchtower-config.js",
-    "wt-config:generate:prod": "npm run wt-config:generate -- prod",
-    "wt-config:generate:dev": "npm run wt-config:generate -- dev"
+    "compose:generate:dev": "npm run compose:generate -- dev"
   },
   "dependencies": {
     "dotenv": "^16.6.1",

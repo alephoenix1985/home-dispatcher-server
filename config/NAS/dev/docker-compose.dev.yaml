@@ -1,0 +1,83 @@
+services:
+  dev-cfg1:
+    image: mongo:latest
+    container_name: dev-cfg1
+    command: mongod --configsvr --replSet rs-dev-cfg --port 27017 --bind_ip_all
+    volumes:
+      - ./mongo-data/dev-cfg1:/data/db
+    ports:
+      - "47021:27017"
+    networks:
+      - shared-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  dev-shard1a:
+    image: mongo:latest
+    container_name: dev-shard1a
+    command: mongod --shardsvr --replSet rs-dev-shard1 --port 27017 --bind_ip_all
+    volumes:
+      - ./mongo-data/dev-shard1a:/data/db
+    ports:
+      - "47031:27017"
+    networks:
+      - shared-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  dev-shard2a:
+    image: mongo:latest
+    container_name: dev-shard2a
+    command: mongod --shardsvr --replSet rs-dev-shard2 --port 27017 --bind_ip_all
+    volumes:
+      - ./mongo-data/dev-shard2a:/data/db
+    ports:
+      - "47041:27017"
+    networks:
+      - shared-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  dev-mongos:
+    image: mongo:latest
+    container_name: dev-mongos
+    command: mongos --configdb rs-dev-cfg/dev-cfg1:27017 --bind_ip_all
+    ports:
+      - "47017:27017"
+    networks:
+      - shared-net
+    depends_on:
+      dev-cfg1:
+        condition: service_healthy
+
+  dev-init:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    environment:
+      - MONGO_HOST=192.168.1.37
+    networks:
+      - shared-net
+    depends_on:
+      dev-mongos:
+        condition: service_started
+      dev-shard1a:
+        condition: service_healthy
+      dev-shard2a:
+        condition: service_healthy
+
+networks:
+  shared-net:
+    driver: bridge

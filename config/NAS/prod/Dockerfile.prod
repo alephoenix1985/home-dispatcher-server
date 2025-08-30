@@ -1,0 +1,5 @@
+FROM mongo:latest
+
+COPY init-prod.sh /init-prod.sh
+RUN chmod +x /init-prod.sh
+CMD ["/init-prod.sh"]

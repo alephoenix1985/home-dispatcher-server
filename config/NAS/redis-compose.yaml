@@ -1,0 +1,18 @@
+version: '3.8'
+services:
+  redis:
+    image: redis:latest
+    container_name: redis-server-secure
+    restart: always
+    ports:
+      - "6380:6380"
+    volumes:
+      # Mapea tu archivo de configuración al lugar correcto dentro del contenedor
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf --port 6380
+    networks:
+      - shared-net
+
+networks:
+  shared-net:
+    external: true
