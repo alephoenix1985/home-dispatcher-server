@@ -232,4 +232,4 @@ services:
 
 networks:
   shared-net:
-    driver: bridge
+    external: true
