@@ -22,14 +22,18 @@ services:
       - "com.centurylinklabs.watchtower.scope=<SCOPE_PLACEHOLDER>"
     # The environment variables below will be generated from your .env file.
     environment:
-
+    networks:
+      - shared-net
+      
   watchtower:
     image: containrrr/watchtower
     container_name: watchtower
     restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-
+    secrets:
+      - source: watchtower_config
+        target: /config.json
     environment:
       - WATCHTOWER_CLEANUP=true
       - WATCHTOWER_INCLUDE_RESTARTING=true
@@ -37,6 +41,10 @@ services:
     networks:
       - shared-net
       
+secrets:
+  watchtower_config:
+    file: ./watchtower-config.json
+
 networks:
   shared-net:
     external: true
@@ -138,9 +146,7 @@ const generateCompose = () => {
 
     const newEnvironmentBlock = `    environment:\n${environmentLines.join('\n')}`;
 
-    // Use a variable for the host path to make it clear and easy to change.
-    const watchtowerConfigHostPath = './watchtower-config.json';
-    let outputContent = finalTemplate.replace( // Replace app environment
+    let outputContent = finalTemplate.replace(
         /^\s*environment:(?:.|\n)*?(?=\n\S|$)/m,
         newEnvironmentBlock
     );
