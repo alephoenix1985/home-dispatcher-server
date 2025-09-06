@@ -13,6 +13,12 @@ The primary responsibility of this service is to act as a dedicated and isolated
 3.  **Database Interaction**: Based on the message payload, the service performs the corresponding query or command on the MongoDB sharded cluster.
 4.  **Cache Results**: The result of the database operation is then stored in a Redis server. The `correlationId` from the original message is used as the key for the cached result, allowing the requesting service to retrieve it efficiently.
 
+## Infrastructure Configuration
+
+This repository also contains the Docker Compose configurations for the required backend infrastructure, located within the `config/NAS` directory.
+*   **MongoDB Cluster**: Includes the setup for a sharded MongoDB environment with multiple replica sets for both shards and config servers, simulating a production-grade deployment.
+*   **Redis Server**: Includes the `redis-compose.yaml` and configuration file to run a secure Redis instance for caching.
+
 ## Project Setup
 
 Follow these steps to set up the project locally for development.
