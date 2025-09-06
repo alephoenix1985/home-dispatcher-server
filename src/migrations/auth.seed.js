@@ -1,26 +1,17 @@
-import {MongoClient, ObjectId} from 'mongodb';
-import { envConfig } from '../config/env.config.js';
+import { ObjectId } from 'mongodb';
+import { createClient } from '../../core/helpers/mongo.helper.js';
 
-const MONGODB_URI = envConfig.db.mongo.uri;
 const DB_NAME = 'psfAuth';
 
 /**
  * Seeds the authentication database (psfAuth) with initial data for
  * permissions, roles, and clients.
- * It connects to MongoDB, upserts the data into the respective collections,
- * and then closes the connection.
- * The script will exit with an error code if any part of the seeding fails.
  */
 async function seedAuthDatabase() {
-    let client;
     console.log(`Starting to seed database: ${DB_NAME}...`);
+    const { db, close } = await createClient(DB_NAME);
 
     try {
-        client = new MongoClient(MONGODB_URI);
-        await client.connect();
-        console.log('Connected to MongoDB for auth seeding...');
-
-        const db = client.db(DB_NAME);
 
         const permissionsCollection = db.collection('permissions');
         const permissions = [
@@ -117,8 +108,8 @@ async function seedAuthDatabase() {
         console.error(`Error during the seeding of database ${DB_NAME}:`, error);
         process.exit(1);
     } finally {
-        if (client) {
-            await client.close();
+        if (close) {
+            await close();
             console.log('MongoDB connection closed.');
         }
     }

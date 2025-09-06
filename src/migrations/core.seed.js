@@ -1,18 +1,12 @@
-import { MongoClient } from 'mongodb';
-
-const MONGODB_URI = process.env.MONGO_URI || 'mongodb://localhost:27017';
+import { createClient } from '../../core/helpers/mongo.helper.js';
 const DB_NAME = 'psfCore';
 
 async function seedCoreDatabase() {
-    let client;
     console.log(`Starting to seed database: ${DB_NAME}...`);
+    const { db, close } = await createClient(DB_NAME);
 
     try {
-        client = new MongoClient(MONGODB_URI);
-        await client.connect();
         console.log('Connected to MongoDB for core seeding...');
-
-        const db = client.db(DB_NAME);
 
         // --- Services ---
         const servicesCollection = db.collection('services');
@@ -76,8 +70,8 @@ async function seedCoreDatabase() {
         console.error(`Error during the seeding of database ${DB_NAME}:`, error);
         process.exit(1);
     } finally {
-        if (client) {
-            await client.close();
+        if (close) {
+            await close();
             console.log('MongoDB connection closed.');
         }
     }
