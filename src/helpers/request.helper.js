@@ -2,6 +2,7 @@ import { dataController } from '../controllers/data.controller.js';
 import { logSection } from 'psf-core/services/logger.service.js';
 import { envConfig } from '../config/env.config.js';
 import { cache as redisClient } from 'psf-core/services/cache.service.js';
+import {parseSqsMessage} from "../../core/services/aws/aws-sqs.service.js";
 
 const logger = logSection('REQUEST-HELPER');
 
@@ -45,21 +46,10 @@ const cacheResponse = async (correlationId, payload, ttl) => {
  * @param {object} rawSqsMessage - The raw message object received from SQS.
  */
 export const processResultMessage = async (rawSqsMessage) => {
-    let messageData;
+    const messageData = parseSqsMessage(rawSqsMessage);
 
-    try {
-        if (rawSqsMessage && typeof rawSqsMessage.Body === 'string') {
-            messageData = JSON.parse(rawSqsMessage.Body);
-        } else {
-            // Fallback for testing or if the message is already parsed.
-            messageData = rawSqsMessage;
-        }
-    } catch (error) {
-        logger.error('Failed to parse SQS message body. Discarding message.', {
-            body: rawSqsMessage.Body,
-            error: error.message,
-        });
-        return; // Unparseable message is considered handled.
+    if (!messageData) {
+        return; // Error is already logged by parseSqsMessage
     }
 
     const { action, payload, correlationId, ttl } = messageData;

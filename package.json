@@ -12,9 +12,12 @@
     "db:seed": "node scripts/run-migrations.js",
     "db:seed:dev": "npm run db:seed -- dev",
     "db:seed:prod": "npm run db:seed -- prod",
-    "compose:generate": "node core/scripts/generate-compose.js",
-    "compose:generate:prod": "npm run compose:generate -- prod",
-    "compose:generate:dev": "npm run compose:generate -- dev"
+    "compose-db:generate": "node core/scripts/generate-compose.js",
+    "compose-db:generate:prod": "npm run compose-db:generate -- prod",
+    "compose-db:generate:dev": "npm run compose-db:generate -- dev",
+    "compose-redis:generate": "node core/scripts/generate-redis-compose.js",
+    "compose-redis:generate:prod": "npm run compose-redis:generate -- prod",
+    "compose-redis:generate:dev": "npm run compose-redis:generate -- dev"
   },
   "dependencies": {
     "dotenv": "^16.6.1",

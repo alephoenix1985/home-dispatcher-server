@@ -6,10 +6,11 @@ services:
     restart: always
     ports:
       - "6380:6380"
-    volumes:
-      # Mapea tu archivo de configuración al lugar correcto dentro del contenedor
-      - ./redis.conf:/usr/local/etc/redis/redis.conf
-    command: redis-server /usr/local/etc/redis/redis.conf --port 6380
+    environment:
+      - REDIS_USER=${REDIS_USER}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    command: >
+      bash -c "redis-server --port 6380 --user ${REDIS_USER} on >${REDIS_PASSWORD} ~* +@all"
     networks:
       - shared-net
 
