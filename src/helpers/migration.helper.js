@@ -1,86 +1,82 @@
-// import getClient from 'mongodb-atlas-api-client';
-import 'dotenv/config';
-import { promises as fs } from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { logSection } from 'psf-core/services/logger.service.js';
+import { db } from '../services/mongo.service.js';
+import path from 'path';
+import fs from 'fs';
 
-const logger = logSection('ATLAS-MIGRATION');
+const logger = logSection('MIGRATION-HELPER');
 
-const {
-    ATLAS_PUBLIC_KEY,
-    ATLAS_PRIVATE_KEY,
-    ATLAS_PROJECT_ID,
-    ATLAS_CLUSTER_NAME,
-    MONGO_DB_NAME
-} = process.env;
-
-/** Reads a configuration file and ensures that each Atlas Search index
- * defined in it exists, creating it if necessary, using the getClient pattern.
- * @async
- * @returns {Promise<void>} A Promise that resolves when the synchronization is complete.
- * @throws {Error} If there is a fatal error during synchronization or if the configuration file is invalid.
+/**
+ * Manages and executes database migrations.
+ * @class
  */
-export const ensureAtlasSearchIndexes = async () => {
-    logger.info('Starting Atlas Search index synchronization.');
-
-    if (!ATLAS_PUBLIC_KEY || !ATLAS_PRIVATE_KEY || !ATLAS_PROJECT_ID || !ATLAS_CLUSTER_NAME) {
-        logger.warn('Missing Atlas Admin API credentials in .env. Skipping search index synchronization.');
-        return;
+class MigrationHelper {
+    /**
+     * Initializes the helper with the specified environment.
+     * @param {string} environment - The deployment environment (e.g., 'dev', 'prod').
+     */
+    constructor(environment) {
+        this.environment = environment;
+        this.migrationsDir = path.join(process.cwd(), 'src', 'migrations');
+        this.dbName = process.env.MONGO_DB_DBNAME;
     }
 
-    try {
-        const { atlasSearch } = getClient({
-            publicKey: ATLAS_PUBLIC_KEY,
-            privateKey: ATLAS_PRIVATE_KEY,
-            projectId: ATLAS_PROJECT_ID,
-            baseUrl: "https://cloud.mongodb.com/api/atlas/v1.0"
-        });
+    /**
+     * Retrieves the list of executed migration scripts from the database.
+     * @returns {Promise<string[]>} A list of migration script names.
+     */
+    async getExecutedMigrations() {
+        try {
+            const migrations = await db.getAll(this.dbName, '_migrations');
+            return migrations.map(m => m.script);
+        } catch (error) {
+            // If the collection doesn't exist, it's the first run.
+            if (error.message.includes('ns not found')) {
+                logger.info('_migrations collection not found. Assuming first run.');
+                return [];
+            }
+            logger.error('Failed to get executed migrations.', { error });
+            throw error;
+        }
+    }
 
-        // 3. Leer el archivo de configuración de índices.
-        const __dirname = path.dirname(fileURLToPath(import.meta.url));
-        const filePath = path.resolve(__dirname, '../config/atlas-search-migration.json');
-        const fileContent = await fs.readFile(filePath, 'utf-8');
-        const indexDefinitions = JSON.parse(fileContent);
-
-        if (!Array.isArray(indexDefinitions)) {
-            throw new Error('atlas-search-migration.json is not a valid array.');
+    /**
+     * Executes all pending migration scripts.
+     */
+    async run() {
+        logger.info(`Starting migrations for environment: ${this.environment}`);
+        
+        if (!this.dbName) {
+            logger.error('MONGO_DB_DBNAME is not defined in environment variables.');
+            throw new Error('MONGO_DB_DBNAME is not defined.');
         }
 
-        logger.info(`Found ${indexDefinitions.length} Atlas Search index definitions to process.`);
+        const executedMigrations = await this.getExecutedMigrations();
+        const migrationFiles = fs.readdirSync(this.migrationsDir).filter(file => file.endsWith('.js'));
 
-        // 4. Procesar cada definición en paralelo.
-        const allPromises = indexDefinitions.map(async (definition) => {
-            const { indexName, collectionName, mappings } = definition;
-
-            const existingIndexes = await atlasSearch.getAll(ATLAS_CLUSTER_NAME, MONGO_DB_NAME, collectionName);
-            const existingIndex = existingIndexes.find(index => index.name === indexName);
-
-            if (existingIndex) {
-                logger.info(`✅ Index '${indexName}' on '${collectionName}' already exists. Skipping.`);
-                return;
+        for (const file of migrationFiles) {
+            if (executedMigrations.includes(file)) {
+                logger.info(`Skipping already executed migration: ${file}`);
+                continue;
             }
 
-            logger.info(`Index '${indexName}' not found. Creating...`);
-            const newIndexPayload = {
-                name: indexName,
-                database: MONGO_DB_NAME,
-                collectionName: collectionName,
-                mappings: mappings
-            };
+            logger.info(`Running migration: ${file}`);
+            try {
+                const migration = await import(path.join(this.migrationsDir, file));
+                if (typeof migration.up !== 'function') {
+                    throw new Error(`Migration script ${file} must export an 'up' function.`);
+                }
 
-            await atlasSearch.create(ATLAS_CLUSTER_NAME, newIndexPayload);
+                await migration.up(db, this.dbName);
+                await db.setNew(this.dbName, '_migrations', { script: file, executedAt: new Date() });
+                logger.info(`Successfully executed migration: ${file}`);
+            } catch (error) {
+                logger.error(`Failed to execute migration: ${file}`, { error });
+                throw error; // Stop execution on failure
+            }
+        }
 
-            logger.info(`✅ Successfully initiated creation of index '${indexName}'. It may take a few minutes to build.`);
-        });
-
-        await Promise.all(allPromises);
-
-        logger.info('Atlas Search index synchronization complete.');
-
-    } catch (error) {
-        logger.error('Fatal error during Atlas Search index synchronization:');
-        logger.error(error);
-        throw error;
+        logger.info('All pending migrations have been executed.');
     }
-};
+}
+
+export default MigrationHelper;

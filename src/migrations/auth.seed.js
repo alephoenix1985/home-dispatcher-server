@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb';
-import { createClient } from '../../core/helpers/mongo.helper.js';
+import { createClient } from 'psf-core/helpers/mongo.helper.js';
 
 const DB_NAME = 'psfAuth';
 

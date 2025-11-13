@@ -1,232 +1,116 @@
+import {logSection} from 'psf-core/node/services/logger.service.js';
 import {MongoClient, ObjectId} from 'mongodb';
-import {logSection} from 'psf-core/services/logger.service.js';
-import {envConfig} from "../config/env.config.js";
+import { getSecretValue } from 'psf-core/shared/helpers/sst.helper.js';
 
-const logger = logSection('MONGO');
+const logger = logSection('MONGO-SERVICE');
 
-let client;
-
-const convertStringsToObjectId = (data) => {
-    if (Array.isArray(data)) {
-        return data.map(item => convertStringsToObjectId(item));
+/**
+ * Manages MongoDB connections and operations.
+ * @class
+ */
+class MongoService {
+    /**
+     * Initializes the service.
+     */
+    constructor() {
+        this.connections = {};
+        this.mongoUri = null;
     }
-    if (data !== null && typeof data === 'object' && !(data instanceof Date) && !(data instanceof ObjectId)) {
-        const newObj = {};
-        for (const key in data) {
-            if (Object.prototype.hasOwnProperty.call(data, key)) {
-                newObj[key] = convertStringsToObjectId(data[key]);
+
+    /**
+     * Retrieves the MongoDB connection URI from the central secret management function.
+     * Caches the URI after the first retrieval.
+     * @returns {Promise<string>} The MongoDB connection URI.
+     */
+    async getMongoUri() {
+        if (!this.mongoUri) {
+            // Use the centralized function to get the secret value
+            this.mongoUri = getSecretValue('MONGO_URI');
+
+            // Debugging logs
+            console.log("DEBUG: Attempting to get MONGO_URI from centralized getSecretValue.");
+            console.log(`DEBUG: MONGO_URI value (first 5 chars): ${this.mongoUri ? this.mongoUri.substring(0, 5) + '...' : 'undefined'}`);
+
+            if (!this.mongoUri) {
+                throw new Error('MONGO_URI secret not found via centralized getSecretValue.');
             }
         }
-        return newObj;
-    }
-    if (typeof data === 'string' && ObjectId.isValid(data) && data.length === 24) {
-        return new ObjectId(data);
-    }
-    return data;
-};
-
-const getClient = async () => {
-    if (client && client.topology && client.topology.isConnected()) {
-        logger.debug('Reusing existing MongoDB client connection.');
-        return client;
-    }
-    try {
-        logger.info('No active MongoDB connection found. Creating a new one...');
-        client = new MongoClient(envConfig.db.mongo.uri, envConfig.db.mongo.options);
-        await client.connect();
-        logger.info('Successfully connected to MongoDB.');
-        return client;
-    } catch (error) {
-        logger.error('Failed to connect to MongoDB.', {error});
-        client = undefined;
-        throw error;
-    }
-};
-
-const get = async (dbName, collectionName, query = {}, options = {}) => {
-    const client = await getClient();
-    const db = client.db(dbName);
-    const collection = db.collection(collectionName);
-    const cleanedQuery = convertStringsToObjectId(query);
-    logger.debug(`Executing GET on ${dbName}.${collectionName}`, {query: cleanedQuery});
-    return await collection.findOne(cleanedQuery, options);
-};
-
-const getAll = async (dbName, collectionName, query = {}, options = {}) => {
-    const client = await getClient();
-    const db = client.db(dbName);
-    const collection = db.collection(collectionName);
-    const cleanedQuery = convertStringsToObjectId(query);
-    logger.debug(`Executing GET_ALL on ${dbName}.${collectionName}`, {query: cleanedQuery});
-    return await collection.find(cleanedQuery, options).toArray();
-};
-
-const set = async (dbName, collectionName, query, data, options = {}) => {
-    const client = await getClient();
-    const db = client.db(dbName);
-    const collection = db.collection(collectionName);
-    const cleanedQuery = convertStringsToObjectId(query);
-    const cleanedData = convertStringsToObjectId(data);
-    logger.debug(`Executing SET on ${dbName}.${collectionName}`, {query: cleanedQuery});
-    const updateOptions = {...options};
-    return await collection.updateOne(cleanedQuery, {$set: cleanedData}, updateOptions);
-};
-
-const setNew = async (dbName, collectionName, data, options = {}) => {
-    const client = await getClient();
-    const db = client.db(dbName);
-    const collection = db.collection(collectionName);
-    const cleanedData = convertStringsToObjectId(data);
-    logger.debug(`Executing SET_NEW on ${dbName}.${collectionName}`);
-    const updateOptions = {...options};
-    const doc = await collection.insertOne(cleanedData, updateOptions);
-    return {...cleanedData, _id: doc.insertedId};
-};
-
-const del = async (dbName, collectionName, query, options = {}) => {
-    const client = await getClient();
-    const db = client.db(dbName);
-    const collection = db.collection(collectionName);
-    const cleanedQuery = convertStringsToObjectId(query);
-    logger.debug(`Executing DELETE on ${dbName}.${collectionName}`, {query: cleanedQuery});
-    return await collection.deleteMany(cleanedQuery, options);
-};
-
-const bulk = async (dbName, collectionName, operations, options = {}) => {
-    const client = await getClient();
-    const db = client.db(dbName);
-    const collection = db.collection(collectionName);
-    const cleanedOperations = convertStringsToObjectId(operations);
-    logger.debug(`Executing BULK on ${dbName}.${collectionName}`, {operationCount: cleanedOperations.length});
-    return await collection.bulkWrite(cleanedOperations, options);
-};
-
-const aggregate = async (dbName, collectionName, stages = [], options = {}) => {
-    const client = await getClient();
-    const db = client.db(dbName);
-    const collection = db.collection(collectionName);
-    const cleanedStages = convertStringsToObjectId(stages);
-    logger.debug(`Executing AGGREGATE on ${dbName}.${collectionName}`, {stageCount: cleanedStages.length});
-    return await collection.aggregate(cleanedStages, options).toArray();
-};
-
-const getValueFromPath = (obj, path) => {
-    if (!path || typeof path !== 'string') return undefined;
-    return path.split('.').reduce((acc, part) => acc && acc[part], obj);
-};
-
-const resolvePlaceholders = (current, prevResult) => {
-    if (!prevResult) return current;
-
-    if (Array.isArray(current)) {
-        return current.map(item => resolvePlaceholders(item, prevResult));
+        return this.mongoUri;
     }
 
-    if (current !== null && typeof current === 'object' && !(current instanceof Date) && !(current instanceof ObjectId)) {
-        const newObj = {};
-        for (const key in current) {
-            if (Object.prototype.hasOwnProperty.call(current, key)) {
-                newObj[key] = resolvePlaceholders(current[key], prevResult);
-            }
+    /**
+     * Establishes and retrieves a MongoDB connection for a specific database.
+     * @param {string} dbName - The name of the database.
+     * @returns {Promise<Db>} The MongoDB database instance.
+     */
+    async getConnection(dbName) {
+        if (this.connections[dbName]) {
+            return this.connections[dbName];
         }
-        return newObj;
-    }
 
-    if (typeof current === 'string' && current.startsWith('$$prev.')) {
-        const path = current.substring(7);
-        const resolvedValue = getValueFromPath(prevResult, path);
-        logger.debug(`Resolved placeholder '${current}' to value:`, {resolvedValue});
-        if (resolvedValue === undefined) {
-            throw new Error(`Placeholder '${current}' could not be resolved from previous operation\'s result.`);
-        }
-        return resolvedValue;
-    }
-
-    return current;
-};
-
-const transaction = async (dbName, operations) => {
-    const client = await getClient();
-    const session = client.startSession();
-    logger.info(`Starting transaction on database: ${dbName}`);
-
-    try {
-        const results = [];
-        await session.withTransaction(async () => {
-            for (const op of operations) {
-                const previousResult = results.length > 0 ? results[results.length - 1] : null;
-                const resolvedOp = resolvePlaceholders(op, previousResult);
-                const {method, collection, query, data, stages, id, bulkOps} = resolvedOp;
-
-                const options = {session};
-                let result;
-
-                logger.debug(`Executing operation '${method}' on collection '${collection}' within transaction.`);
-
-                switch (method) {
-                    case 'get':
-                        result = await get(dbName, collection, query, options);
-                        break;
-                    case 'getAll':
-                        result = await getAll(dbName, collection, query, options);
-                        break;
-                    case 'getById':
-                        result = await get(dbName, collection, {_id: id}, options);
-                        break;
-                    case 'set':
-                        result = await set(dbName, collection, query, data, options);
-                        if (result.upsertedId) {
-                            result._id = result.upsertedId;
-                        }
-                        break;
-                    case 'setNew':
-                        result = await setNew(dbName, collection, query, data, options);
-                        break;
-                    case 'setById':
-                        result = await set(dbName, collection, query, {_id: id}, options);
-                        if (result.upsertedId) {
-                            result._id = result.upsertedId;
-                        }
-                        break;
-                    case 'del':
-                        result = await del(dbName, collection, query, options);
-                        break;
-                    case 'delById':
-                        result = await del(dbName, collection, {_id: id}, options);
-                        break;
-                    case 'bulk':
-                        result = await bulk(dbName, collection, bulkOps, options);
-                        break;
-                    case 'aggregate':
-                        result = await aggregate(dbName, collection, stages, options);
-                        break;
-                    default:
-                        throw new Error(`Unsupported method '${method}' in transaction.`);
-                }
-                results.push(result);
-            }
+        const uri = await this.getMongoUri();
+        const client = new MongoClient(uri, {
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+            serverSelectionTimeoutMS: 5000,
         });
 
-        logger.info(`Transaction committed successfully on database: ${dbName}`);
-        return results;
-    } catch (error) {
-        logger.error(`Transaction aborted due to an error on database: ${dbName}`, {error});
-        throw error;
-    } finally {
-        session.endSession();
-        logger.debug(`Transaction session ended for database: ${dbName}`);
+        try {
+            await client.connect();
+            this.connections[dbName] = client.db(dbName);
+            logger.info(`Successfully connected to MongoDB database: ${dbName}`);
+            return this.connections[dbName];
+        } catch (error) {
+            logger.error(`Failed to connect to MongoDB database: ${dbName}`, {error});
+            throw error;
+        }
     }
-};
 
-export const db = {
-    aggregate,
-    bulk,
-    convertStringsToObjectId,
-    del,
-    get,
-    getAll,
-    getClient,
-    set,
-    setNew,
-    transaction,
-};
+    /**
+     * Executes a database query.
+     * @param {string} dbName - The database name.
+     * @param {string} collectionName - The collection name.
+     * @param {string} method - The MongoDB method to execute.
+     * @param {Array} args - The arguments for the method.
+     * @returns {Promise<any>} The result of the query.
+     */
+    async execute(dbName, collectionName, method, args) {
+        const db = await this.getConnection(dbName);
+        return db.collection(collectionName)[method](...args);
+    }
+
+    // CRUD methods
+    get = (dbName, collection, query, options) => this.execute(dbName, collection, 'findOne', [query, options]);
+    getAll = (dbName, collection, query, options) => this.execute(dbName, collection, 'find', [query, options]).then(cursor => cursor.toArray());
+    set = (dbName, collection, query, data, options) => this.execute(dbName, collection, 'updateOne', [query, {$set: data}, options]);
+    setNew = (dbName, collection, data, options) => this.execute(dbName, collection, 'insertOne', [data, options]);
+    del = (dbName, collection, query, options) => this.execute(dbName, collection, 'deleteOne', [query, options]);
+    bulk = (dbName, collection, operations, options) => this.execute(dbName, collection, 'bulkWrite', [operations, options]);
+    aggregate = (dbName, collection, stages, options) => this.execute(dbName, collection, 'aggregate', [stages, options]).then(cursor => cursor.toArray());
+
+    /**
+     * Executes a series of operations within a transaction.
+     * @param {string} dbName - The database name.
+     * @param {Function} operations - A function that receives a session and executes operations.
+     * @returns {Promise<any>} The result of the transaction.
+     */
+    async transaction(dbName, operations) {
+        const uri = await this.getMongoUri();
+        const client = new MongoClient(uri);
+        await client.connect();
+        const session = client.startSession();
+        let result;
+        try {
+            await session.withTransaction(async () => {
+                result = await operations(session);
+            });
+        } finally {
+            await session.endSession();
+            await client.close();
+        }
+        return result;
+    }
+}
+
+export const db = new MongoService();
+export {ObjectId};

@@ -1,0 +1,79 @@
+service: psf-db
+
+org: phoenixsoftwarefactory
+app: psf
+
+frameworkVersion: '^4.0.0'
+
+plugins:
+  - serverless-offline
+
+build:
+  bundle: true
+  minify: true
+  sourcemap: true
+  external:
+    - '*'
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  stage: ${opt:stage, 'prod'}
+  region: ${env:AMAZON_SERVICE_REGION, 'eu-west-3'}
+  environment:
+    MONGO_URI: ${env:MONGO_URI}
+    MONGO_DB_DBNAME: ${env:MONGO_DB_DBNAME}
+    REDIS_HOST: ${env:REDIS_HOST}
+    REDIS_PORT: ${env:REDIS_PORT}
+    REDIS_PASSWORD: ${env:REDIS_PASSWORD}
+    REDIS_DEFAULT_TTL_SECONDS: ${env:REDIS_DEFAULT_TTL_SECONDS}
+    DEBUG_MODE: ${env:DEBUG_MODE, 'false'}
+    SERVICE_NAME: ${self:service}
+    AMAZON_SERVICE_CLOUDWATCH_DB_LOG_GROUP_NAME: ${env:AMAZON_SERVICE_CLOUDWATCH_DB_LOG_GROUP_NAME}
+    AMAZON_SERVICE_CLOUDWATCH_DB_LOG_STREAM_NAME: ${env:AMAZON_SERVICE_CLOUDWATCH_DB_LOG_STREAM_NAME}
+    AMAZON_SERVICE_SQS_DB_REQUESTS_QUEUE: ${env:AMAZON_SERVICE_SQS_DB_REQUESTS_QUEUE}
+    SERVICE_SECRET: ${env:SERVICE_SECRET}
+  iam:
+    role:
+      statements:
+        - Effect: 'Allow'
+          Action:
+            - 'sqs:ReceiveMessage'
+            - 'sqs:DeleteMessage'
+            - 'sqs:SendMessage'
+            - 'sqs:GetQueueAttributes'
+          Resource: ${self:custom.dbRequestsQueueArn}
+
+custom:
+  serverless-offline:
+    noPrependStageInUrl: true
+  dbRequestsQueueArn: "arn:aws:sqs:${self:provider.region}:${env:AMAZON_SERVICE_ACCOUNT_ID}:${env:AMAZON_SERVICE_SQS_DB_REQUESTS_QUEUE}"
+
+functions:
+  dbReceiver:
+    handler: src/handlers/processor.handler
+    events:
+      - sqs:
+          arn: ${self:custom.dbRequestsQueueArn}
+          batchSize: 10
+          maximumConcurrency: 5
+          functionResponseType: ReportBatchItemFailures
+      - http:
+          path: /request
+          method: post
+          cors: true
+
+package:
+  individually: true
+  patterns:
+    - '!./core/node_modules/**'
+    - '!.env'
+    - '!.env.*'
+    - '!.git/**'
+    - '!.idea/**'
+    - '!node_modules/react/**'
+    - '!node_modules/react-dom/**'
+    - '!node_modules/next/**'
+    - '!node_modules/next-themes/**'
+    - '!node_modules/@heroui/**'
+    - '!node_modules/styled-jsx/**'

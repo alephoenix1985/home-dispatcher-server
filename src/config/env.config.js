@@ -64,7 +64,7 @@ export const envConfig = {
     db: {
         mongo: {
             uri: process.env.MONGO_URI,
-            dbName: process.env.MONGO_DB_NAME || 'psfDB',
+            dbName: process.env.MONGO_DBNAME || 'psfDB',
             // Placeholder for any future MongoDB client options
             options: {
                 // Example: useNewUrlParser: true, useUnifiedTopology: true
@@ -74,8 +74,8 @@ export const envConfig = {
     aws: {
         sqs: {
             queueName: {
-                dbResult: process.env.SQS_RESULTS_QUEUE,
-                dbResultDL: process.env.SQS_DEAD_LETTER_QUEUE
+                dbResult: process.env.AMAZON_SERVICE_SQS_DB_REQUESTS_QUEUE,
+                dbResultDL: process.env.AMAZON_SERVICE_SQS_DB_DEAD_LETTER_QUEUE
             }
         }
     },
