@@ -13,18 +13,11 @@ jobs:
     if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
-      id-token: write
       contents: read
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::${{ secrets.AMAZON_SERVICE_ACCOUNT_ID }}:role/GitHubActionRole
-          aws-region: eu-west-3
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -44,18 +37,11 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     permissions:
-      id-token: write
       contents: read
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::${{ secrets.AMAZON_SERVICE_ACCOUNT_ID }}:role/GitHubActionRole
-          aws-region: eu-west-3
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
