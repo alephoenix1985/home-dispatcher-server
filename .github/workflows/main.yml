@@ -15,7 +15,6 @@ jobs:
     permissions:
       id-token: write
       contents: read
-      secrets: read
 
     steps:
       - name: Checkout code
@@ -35,18 +34,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Sync config and get secret names for Dev
-        id: sync_dev
-        run: |
-          output=$(node core/scripts/sync-config.js dev)
-          secrets=$(echo "$output" | awk '/--- SECRET PARAMETER NAMES ---/{flag=1; next} /--- END SECRET PARAMETER NAMES ---/{flag=0} flag')
-          echo "secrets_list=$secrets" >> $GITHUB_OUTPUT
-
-      - name: Load secrets from AWS SSM Parameter Store for Dev
-        uses: aws-actions/aws-secrets-to-env@v2
-        with:
-          secrets: ${{ steps.sync_dev.outputs.secrets_list }}
 
       - name: Deploy to Dev
         run: npm run deploy:dev
@@ -59,7 +46,6 @@ jobs:
     permissions:
       id-token: write
       contents: read
-      secrets: read
 
     steps:
       - name: Checkout code
@@ -79,18 +65,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Sync config and get secret names for Prod
-        id: sync_prod
-        run: |
-          output=$(node core/scripts/sync-config.js prod)
-          secrets=$(echo "$output" | awk '/--- SECRET PARAMETER NAMES ---/{flag=1; next} /--- END SECRET PARAMETER NAMES ---/{flag=0} flag')
-          echo "secrets_list=$secrets" >> $GITHUB_OUTPUT
-
-      - name: Load secrets from AWS SSM Parameter Store for Prod
-        uses: aws-actions/aws-secrets-to-env@v2
-        with:
-          secrets: ${{ steps.sync_prod.outputs.secrets_list }}
 
       - name: Deploy to Production
         run: npm run deploy:prod
