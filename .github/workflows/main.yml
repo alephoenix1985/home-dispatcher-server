@@ -12,8 +12,6 @@ jobs:
     name: Deploy to Dev
     if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
 
     steps:
       - name: Checkout code
@@ -21,6 +19,13 @@ jobs:
         with:
           submodules: 'recursive'
           token: ${{ secrets.PAT }}
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AMAZON_SERVICE_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AMAZON_SERVICE_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AMAZON_SERVICE_REGION }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -38,8 +43,6 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     environment: production
-    permissions:
-      contents: read
 
     steps:
       - name: Checkout code
@@ -47,6 +50,13 @@ jobs:
         with:
           submodules: 'recursive'
           token: ${{ secrets.PAT }}
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AMAZON_SERVICE_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AMAZON_SERVICE_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AMAZON_SERVICE_REGION }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
