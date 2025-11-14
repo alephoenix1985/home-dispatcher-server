@@ -22,15 +22,6 @@
     "deploy:prod": "dotenv -e .env.prod -- sst deploy --stage prod --verbose",
     "remove:dev": "dotenv -e .env.dev -- sst remove --stage dev",
     "remove:prod": "dotenv -e .env.prod -- sst remove --stage prod",
-    "ssm:sync": "node core/scripts/sync-config.js",
-    "ssm:sync:dev": "npm run ssm:sync -- dev",
-    "ssm:sync:prod": "npm run ssm:sync -- prod",
-    "ssm:query": "node core/scripts/query-ssm.js",
-    "ssm:query:dev": "npm run ssm:query -- dev",
-    "ssm:query:prod": "npm run ssm:query -- prod",
-    "ssm:delete": "node core/scripts/delete-ssm.js",
-    "aws-env-var:sync:dev": "node node_modules/psf-core/scripts/sync-config.js dev",
-    "aws-env-var:sync:prod": "node node_modules/psf-core/scripts/sync-config.js prod"
   },
   "dependencies": {
     "@aws-sdk/client-cloudwatch-logs": "^3.614.0",
