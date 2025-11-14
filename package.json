@@ -21,7 +21,7 @@
     "deploy:dev": "dotenv -e .env.dev -- sst deploy --stage dev",
     "deploy:prod": "dotenv -e .env.prod -- sst deploy --stage prod --verbose",
     "remove:dev": "dotenv -e .env.dev -- sst remove --stage dev",
-    "remove:prod": "dotenv -e .env.prod -- sst remove --stage prod",
+    "remove:prod": "dotenv -e .env.prod -- sst remove --stage prod"
   },
   "dependencies": {
     "@aws-sdk/client-cloudwatch-logs": "^3.614.0",
