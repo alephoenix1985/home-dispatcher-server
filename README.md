@@ -98,3 +98,38 @@ The CI/CD workflow should be updated to use Serverless Framework commands.
 2.  **Serverless Deploy**: The workflow runs `sls deploy --stage <stage>` to automatically package the code, create/update the Lambda function, and configure the SQS trigger in AWS.
 
 This process ensures that any update pushed to the `main` or `dev` branch is automatically deployed to the corresponding AWS environment. The Watchtower and Docker-based deployment for this service are no longer needed.
+
+## Listing API Gateway Endpoints and Lambda Functions
+
+Para ver los endpoints de API Gateway desplegados y sus funciones Lambda asociadas para un servicio, usa el script `list:api:functions` definido en `package.json`. Este script es genérico y funciona para cualquier proyecto que siga la convención de nombres de SST (nombre del servicio en `package.json` + `-api`).
+
+### Uso
+
+```bash
+npm run list:api:functions [-- --stage <dev|prod>] [-- --profile <aws_profile>] [-- --region <aws_region>]
+```
+
+*   `--stage`: Especifica el entorno de despliegue (`dev` o `prod`). Si no se especifica, se verificarán ambos.
+*   `--profile`: Especifica el perfil de AWS a usar de tu archivo `~/.aws/credentials`. Por defecto es `ale02`.
+*   `--region`: Especifica la región de AWS a usar. Por defecto es `eu-west-3`.
+
+**Nota:** Los argumentos para el script bash deben ir después de `--` cuando se ejecuta a través de `npm run`.
+
+### Ejemplos
+
+*   Listar funciones y endpoints para los entornos `dev` y `prod` (por defecto) usando el perfil de AWS `ale02` y la región `eu-west-3`:
+    ```bash
+    npm run list:api:functions
+    ```
+
+*   Listar funciones y endpoints solo para el entorno `prod` usando el perfil de AWS `ale02` y la región `us-east-1`:
+    ```bash
+    npm run list:api:functions -- --stage prod --region us-east-1
+    ```
+
+*   Listar funciones y endpoints para los entornos `dev` y `prod` usando un perfil de AWS diferente llamado `my-profile` y la región por defecto:
+    ```bash
+    npm run list:api:functions -- --profile my-profile
+    ```
+
+Es
