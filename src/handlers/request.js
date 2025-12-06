@@ -1,5 +1,5 @@
 import { handleApiGatewayRequest } from '../helpers/api-gateway.helper.js';
-import { logSection } from 'psf-core/node/services/logger.service.js';
+import { logSection } from 'psf-core-node/services/logger.service.js';
 
 const logger = logSection('API-HANDLER');
 

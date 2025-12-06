@@ -1,6 +1,6 @@
 // src/services/cache.js
 
-import { createCacheService } from 'psf-core/services/cache.service.js';
+import { createCacheService } from 'psf-core-shared/services/cache.service.js';
 import redisClient from '../clients/redis.client.js';
 
 // Create the final, ready-to-use cache instance by injecting the src client.

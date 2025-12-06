@@ -1,5 +1,6 @@
 // src/controllers/queue.error.controller.js
-import logger from '../services/logger.service.js';
+import logger from 'psf-core-node/services/logger.service.js';
+import { publishResult } from 'psf-core-node/services/aws/aws-sns.service.js';
 
 /**
  * @fileoverview Queue Error Controller.

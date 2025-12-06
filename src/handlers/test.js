@@ -1,4 +1,4 @@
-import { sayHola } from 'psf-core/helpers/test.helper.js';
+import { sayHola } from 'psf-core-shared/helpers/test.helper.js';
 
 /**
  * A diagnostic Lambda handler to test the resolution of the 'psf-core' alias.

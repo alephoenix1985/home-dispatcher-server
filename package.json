@@ -4,11 +4,9 @@
   "description": "A PSF service that interacts with MongoDB based on AWS SQS/SNS events.",
   "type": "module",
   "workspaces": [
-    "./core",
-    "./"
+    "core"
   ],
   "scripts": {
-    "start:nas": "pm2-runtime start pm2.config.cjs",
     "db:seed": "node scripts/run-migrations.js",
     "db:seed:dev": "npm run db:seed -- dev",
     "db:seed:prod": "npm run db:seed -- prod",
@@ -24,33 +22,13 @@
     "remove:prod": "dotenv -e .env.prod -- sst remove --stage prod"
   },
   "dependencies": {
-    "@aws-sdk/client-cloudwatch-logs": "^3.614.0",
     "@mongodb-js/saslprep": "^1.3.0",
-    "bcryptjs": "^2.4.3",
     "bson": "^6.10.4",
-    "crypto-js": "^4.2.0",
-    "dotenv": "^17.2.2",
-    "jose": "^6.1.0",
-    "lodash": "^4.17.21",
-    "moment": "^2.30.1",
     "mongodb": "^6.19.0",
     "mongodb-connection-string-url": "^3.0.2",
-    "psf-core": "file:./core",
-    "redis": "^4.6.15",
+    "psf-core-node": "file:./core/node",
+    "psf-core-shared": "file:./core/shared",
     "webidl-conversions": "^7.0.0",
-    "whatwg-url": "^14.2.0",
-    "winston": "^3.17.0",
-    "winston-cloudwatch": "^6.3.0"
-  },
-  "devDependencies": {
-    "@aws-sdk/client-ssm": "^3.614.0",
-    "aws-cdk-lib": "^2.222.0",
-    "constructs": "^10.4.2",
-    "dotenv-cli": "^10.0.0",
-    "esbuild": "^0.25.9",
-    "nodemon": "^3.1.10",
-    "pm2": "^6.0.11",
-    "source-map-support": "^0.5.21",
-    "sst": "^3.17.23"
+    "whatwg-url": "^14.2.0"
   }
 }

@@ -1,8 +1,8 @@
 import { dataController } from '../controllers/data.controller.js';
-import { logSection } from 'psf-core/services/logger.lambda.service.js';
+import { logSection } from 'psf-core-node/services/logger-node.service.js';
 import { envConfig } from '../config/env.config.js';
-import { cache as redisClient } from 'psf-core/services/cache.service.js';
-import {parseSqsMessage} from "psf-core/services/aws/aws-sqs.service.js";
+import { cache as redisClient } from 'psf-core-node/services/cache.service.js';
+import {parseSqsMessage} from "psf-core-node/services/aws/aws-sqs.service.js";
 
 const logger = logSection('REQUEST-HELPER');
 

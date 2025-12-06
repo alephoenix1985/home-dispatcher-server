@@ -1,6 +1,6 @@
 import {dataController} from '../controllers/data.controller.js';
-import {logSection} from 'psf-core/node/services/logger.service.js';
-import {authMiddleware} from "psf-core/node/middlewares/auth.middleware.js";
+import {logSection} from 'psf-core-node/services/logger.service.js';
+import {authMiddleware} from "psf-core-node/middlewares/auth.middleware.js";
 
 const logger = logSection('API-GATEWAY-HELPER');
 

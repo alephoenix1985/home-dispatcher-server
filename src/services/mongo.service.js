@@ -1,6 +1,6 @@
-import {logSection} from 'psf-core/node/services/logger.service.js';
+import {logSection} from 'psf-core-node/services/logger.service.js';
 import {MongoClient, ObjectId} from 'mongodb';
-import { getSecretValue } from 'psf-core/shared/helpers/sst.helper.js';
+import {getSecretValue} from "psf-core-shared/helpers/env.helper.js";
 
 const logger = logSection('MONGO-SERVICE');
 

@@ -1,6 +1,6 @@
 import { ObjectId } from 'mongodb';
 import { db } from '../services/mongo.service.js';
-import { logSection } from 'psf-core/node/services/logger.service.js';
+import { logSection } from 'psf-core-node/services/logger.service.js';
 
 const logger = logSection('DATA-CONTROLLER');
 

@@ -1,4 +1,4 @@
-import { logSection } from 'psf-core/services/logger.service.js';
+import { logSection } from 'psf-core-node/services/logger.service.js';
 import { db } from '../services/mongo.service.js';
 import path from 'path';
 import fs from 'fs';
