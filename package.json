@@ -20,7 +20,8 @@
     "deploy:prod": "dotenv -e .env.prod -- sst deploy --stage prod --verbose",
     "remove:dev": "dotenv -e .env.dev -- sst remove --stage dev",
     "remove:prod": "dotenv -e .env.prod -- sst remove --stage prod",
-    "list:api:functions": "bash ./core/node/scripts/list_api_functions.sh"
+    "list:api:functions": "bash ./core/node/scripts/list_api_functions.sh",
+    "update:service:url": "bash ./core/node/scripts/update_service_url_ssm.sh --var DB_SERVICE"
   },
   "dependencies": {
     "@mongodb-js/saslprep": "^1.3.0",

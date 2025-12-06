@@ -111,20 +111,20 @@ npm run list:api:functions [-- --stage <dev|prod>] [-- --profile <aws_profile>] 
 
 *   `--stage`: Especifica el entorno de despliegue (`dev` o `prod`). Si no se especifica, se verificarán ambos.
 *   `--profile`: Especifica el perfil de AWS a usar de tu archivo `~/.aws/credentials`. Por defecto es `ale02`.
-*   `--region`: Especifica la región de AWS a usar. Por defecto es `eu-west-3`.
+*   `--region`: Especifica la región de AWS a usar. Por defecto es `us-east-1`.
 
 **Nota:** Los argumentos para el script bash deben ir después de `--` cuando se ejecuta a través de `npm run`.
 
 ### Ejemplos
 
-*   Listar funciones y endpoints para los entornos `dev` y `prod` (por defecto) usando el perfil de AWS `ale02` y la región `eu-west-3`:
+*   Listar funciones y endpoints para los entornos `dev` y `prod` (por defecto) usando el perfil de AWS `ale02` y la región `us-east-1`:
     ```bash
     npm run list:api:functions
     ```
 
 *   Listar funciones y endpoints solo para el entorno `prod` usando el perfil de AWS `ale02` y la región `us-east-1`:
     ```bash
-    npm run list:api:functions -- --stage prod --region us-east-1
+    npm run list:api:functions -- --stage prod
     ```
 
 *   Listar funciones y endpoints para los entornos `dev` y `prod` usando un perfil de AWS diferente llamado `my-profile` y la región por defecto:
@@ -132,4 +132,33 @@ npm run list:api:functions [-- --stage <dev|prod>] [-- --profile <aws_profile>] 
     npm run list:api:functions -- --profile my-profile
     ```
 
-Es
+## Actualización de URLs de Servicio en SSM
+
+Para consultar la URL base de un API Gateway desplegado y actualizar un parámetro de AWS SSM con esa URL, usa el script `update:service:url` definido en `package.json`. Este script es útil para mantener actualizadas las URLs de tus servicios en SSM, que pueden ser consumidas por otras aplicaciones.
+
+### Uso
+
+```bash
+npm run update:service:url [-- --var <SSM_VAR_PREFIX>] [-- --stage <dev|prod>] [-- --profile <aws_profile>] [-- --region <aws_region>]
+```
+
+*   `--var`: **(Requerido)** Especifica el prefijo para el nombre del parámetro SSM (ej., `DB_SERVICE`). El nombre final del parámetro en SSM será `[SSM_VAR_PREFIX]_[STAGE_EN_MAYUSCULAS]` (ej., `DB_SERVICE_PROD`).
+*   `--stage`: Especifica el entorno de despliegue (`dev` o `prod`). Si no se especifica, se actualizarán ambos.
+*   `--profile`: Especifica el perfil de AWS a usar de tu archivo `~/.aws/credentials`. Por defecto es `ale02`.
+*   `--region`: Especifica la región de AWS a usar. Por defecto es `us-east-1`.
+
+**Nota:** Los argumentos para el script bash deben ir después de `--` cuando se ejecuta a través de `npm run`.
+
+### Ejemplos
+
+*   Actualizar la URL del servicio `DB_SERVICE` para el entorno `prod` en la región `us-east-1` usando el perfil `ale02`:
+    ```bash
+    npm run update:service:url -- --var DB_SERVICE --stage prod
+    ```
+
+*   Actualizar la URL del servicio `AUTH_SERVICE` para el entorno `dev` en la región `us-east-1` usando un perfil diferente llamado `my-profile`:
+    ```bash
+    npm run update:service:url -- --var AUTH_SERVICE --stage dev --profile my-profile
+    ```
+
+Este script buscará el API Gateway correspondiente a tu proyecto y stage, extraerá su URL base y la guardará en el parámetro SSM especificado.
