@@ -32,23 +32,41 @@ The `getAll` method supports advanced pagination and aggregation. To enable it, 
 
 **Example: Paginated request**
 
-```javascript
-const results = await db.getAll('myDb', 'users', { status: 'active' }, {
-  paginate: true,
-  page: 2,
-  limit: 20,
-  sort: { createdAt: -1 }
-});
+To perform a simple paginated query, send a POST request with the following payload structure:
 
-/*
-Expected result:
+```json
 {
-  "items": [ ... ], // 20 records from page 2
-  "total": 150,     // Total count of active users
-  "page": 2,
-  "limit": 20
+  "action": "getAll",
+  "correlationId": "unique-request-id-123",
+  "payload": {
+    "dbName": "myDatabase",
+    "collection": "users",
+    "query": {
+      "status": "active"
+    },
+    "options": {
+      "paginate": true,
+      "page": 1,
+      "limit": 10,
+      "sort": { "createdAt": -1 }
+    }
+  }
 }
-*/
+```
+
+**Expected Response:**
+
+```json
+{
+  "items": [
+    { "_id": "...", "name": "User 1", "status": "active", ... },
+    { "_id": "...", "name": "User 2", "status": "active", ... }
+    // ... up to 10 items
+  ],
+  "total": 150,     // Total count of active users matching the query
+  "page": 1,
+  "limit": 10
+}
 ```
 
 ### Full-Text Search with Relevance Scoring
