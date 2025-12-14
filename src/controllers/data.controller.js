@@ -15,6 +15,7 @@ const handleRequest = async (handler, req, res) => {
 };
 
 const validationErrorMessage = "Request payload must include both 'dbName' and 'collection' properties.";
+const dbNameValidationErrorMessage = "Request payload must include 'dbName' property.";
 
 const get = (req, res) => handleRequest(async (payload) => {
     const { dbName, collection, query, options } = payload;
@@ -32,18 +33,8 @@ const getById = (req, res) => handleRequest(async (payload) => {
     const { dbName, collection, id, options } = payload;
     if (!dbName || !collection) throw new Error(validationErrorMessage);
     if (!id) throw new Error("'id' property is missing in the payload for getById.");
-
-    logger.info(`Executing getById with id: ${id}`);
-    const oid = new ObjectId(id);
-    logger.info(`Converted id to ObjectId: ${oid}`);
-
-    const query = { _id: oid };
-    logger.info(`Executing db.get with query:`, { query });
-
-    const result = await db.get(dbName, collection, query, options);
-    logger.info(`Result from db.get:`, { result });
-
-    return result;
+    const query = { _id: new ObjectId(id) };
+    return await db.get(dbName, collection, query, options);
 }, req, res);
 
 
@@ -75,18 +66,8 @@ const delById = (req, res) => handleRequest(async (payload) => {
     const { dbName, collection, id, options } = payload;
     if (!dbName || !collection) throw new Error(validationErrorMessage);
     if (!id) throw new Error("'id' property is missing in the payload for delById.");
-
-    logger.info(`Executing delById with id: ${id}`);
-    const oid = new ObjectId(id);
-    logger.info(`Converted id to ObjectId: ${oid}`);
-
-    const query = { _id: oid };
-    logger.info(`Executing db.del with query:`, { query });
-
-    const result = await db.del(dbName, collection, query, options);
-    logger.info(`Result from db.del:`, { result });
-
-    return result;
+    const query = { _id: new ObjectId(id) };
+    return await db.del(dbName, collection, query, options);
 }, req, res);
 
 const bulk = (req, res) => handleRequest(async (payload) => {
@@ -103,24 +84,64 @@ const aggregate = (req, res) => handleRequest(async (payload) => {
 
 const transaction = (req, res) => handleRequest(async (payload) => {
     const { dbName, operations } = payload;
-    if (!dbName) throw new Error("Request payload must include 'dbName' property for transactions.");
+    if (!dbName) throw new Error(dbNameValidationErrorMessage);
     if (!Array.isArray(operations) || operations.length === 0) {
         throw new Error('The "operations" parameter must be a non-empty array.');
     }
     return await db.transaction(dbName, operations);
 }, req, res);
 
+const createIndex = (req, res) => handleRequest(async (payload) => {
+    const { dbName, collection, indexSpec, options } = payload;
+    if (!dbName || !collection || !indexSpec) throw new Error("Payload must include 'dbName', 'collection', and 'indexSpec'.");
+    return await db.createIndex(dbName, collection, indexSpec, options);
+}, req, res);
+
+// --- MIGRATION CONTROLLERS ---
+
+const getMigrations = (req, res) => handleRequest(async (payload) => {
+    const { dbName } = payload;
+    if (!dbName) throw new Error(dbNameValidationErrorMessage);
+    return await db.getMigrations(dbName);
+}, req, res);
+
+const addMigration = (req, res) => handleRequest(async (payload) => {
+    const { dbName, name, upScript, downScript } = payload;
+    if (!dbName || !name || !upScript || !downScript) throw new Error("Payload must include 'dbName', 'name', 'upScript', and 'downScript'.");
+    return await db.addMigration(dbName, name, upScript, downScript);
+}, req, res);
+
+const runMigration = (req, res) => handleRequest(async (payload) => {
+    const { dbName, name, direction } = payload;
+    if (!dbName || !name || !direction) throw new Error("Payload must include 'dbName', 'name', and 'direction'.");
+    return await db.runMigration(dbName, name, direction);
+}, req, res);
+
+const createSnapshot = (req, res) => handleRequest(async (payload) => {
+    const { dbName, snapshotName } = payload;
+    if (!dbName) throw new Error(dbNameValidationErrorMessage);
+    return await db.createSnapshot(dbName, snapshotName);
+}, req, res);
+
 
 export const dataController = {
-    aggregate,
-    bulk,
-    del,
-    delById,
+    // Standard CRUD
     get,
     getAll,
     getById,
     set,
     setNew,
-    transaction,
     upsert,
+    del,
+    delById,
+    // Advanced Operations
+    aggregate,
+    bulk,
+    transaction,
+    createIndex,
+    // Migration System
+    addMigration,
+    getMigrations,
+    runMigration,
+    createSnapshot,
 };

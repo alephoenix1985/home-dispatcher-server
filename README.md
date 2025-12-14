@@ -1,164 +1,183 @@
 # PSF Database Service
 
-This project is a decoupled microservice designed to handle all database interactions for the platform. It operates by listening to an AWS SQS queue, processing requests, interacting with a MongoDB cluster, and caching results in Redis.
+This project is a decoupled microservice designed to handle all database interactions for the platform. It acts as a secure and centralized data layer, exposing a clear API for other services.
 
-## Project Overview and Flow
+## Core Features
 
-The primary responsibility of this service is to act as a dedicated and isolated data layer. This decoupled architecture ensures that other services do not need direct access to the database, improving security and maintainability.
+*   **Decoupled Architecture**: Other services interact with the database through a well-defined API, not directly. This improves security, maintainability, and scalability.
+*   **MongoDB Integration**: Provides a robust `MongoService` class that abstracts MongoDB operations.
+*   **Advanced Querying**: Supports complex queries, pagination, and full-text search with relevance scoring.
+*   **Database Migrations**: Includes a powerful, built-in migration system to manage database schema changes programmatically.
 
-### Workflow
+---
 
-1.  **Listen for Events**: The service actively listens for messages on an AWS SQS queue named `results`.
-2.  **Process Messages**: Each message is expected to contain a `correlationId` and a `payload`. The service uses this information to determine the required action.
-3.  **Database Interaction**: Based on the message payload, the service performs the corresponding query or command on the MongoDB sharded cluster.
-4.  **Cache Results**: The result of the database operation is then stored in a Redis server. The `correlationId` from the original message is used as the key for the cached result, allowing the requesting service to retrieve it efficiently.
+## MongoService API
 
-## Infrastructure Configuration
+The `MongoService` is the heart of this project. It provides a set of methods to interact with the MongoDB database.
 
-This repository also contains the Docker Compose configurations for the required backend infrastructure, located within the `config/NAS` directory.
-*   **MongoDB Cluster**: Includes the setup for a sharded MongoDB environment with multiple replica sets for both shards and config servers, simulating a production-grade deployment.
-*   **Redis Server**: Includes the `redis-compose.yaml` and configuration file to run a secure Redis instance for caching.
+### Standard CRUD and Querying
 
-## Project Setup
+*   `get(dbName, collection, query, options)`: Fetches a single document.
+*   `getAll(dbName, collection, query, options)`: Fetches multiple documents.
+*   `set(dbName, collection, query, data, options)`: Updates a document.
+*   `setNew(dbName, collection, data, options)`: Inserts a new document.
+*   `del(dbName, collection, query, options)`: Deletes a document.
+*   `bulk(dbName, collection, operations, options)`: Performs multiple write operations.
+*   `aggregate(dbName, collection, stages, options)`: Executes an aggregation pipeline.
+*   `createIndex(dbName, collection, indexSpec, options)`: Creates an index on a collection.
 
-Follow these steps to set up the project locally for development.
+### Advanced `getAll` with Pagination
 
-### 1. Clone and Initialize Submodules
+The `getAll` method supports advanced pagination and aggregation. To enable it, pass `paginate: true` in the `options` object.
 
-This project uses git submodules (like `psf-core`) to manage shared code. After cloning the repository, you must initialize and update these submodules.
+**Example: Paginated request**
 
-```bash
-git submodule update --init --recursive
+```javascript
+const results = await db.getAll('myDb', 'users', { status: 'active' }, {
+  paginate: true,
+  page: 2,
+  limit: 20,
+  sort: { createdAt: -1 }
+});
+
+/*
+Expected result:
+{
+  "items": [ ... ], // 20 records from page 2
+  "total": 150,     // Total count of active users
+  "page": 2,
+  "limit": 20
+}
+*/
 ```
 
-### 2. Install Dependencies
+### Full-Text Search with Relevance Scoring
 
-Install the required Node.js packages using npm.
+To perform a "Google-like" search, you must first create a **text index**. The recommended approach is a wildcard index, which automatically includes all string fields.
 
-```bash
-npm install
+**Step 1: Create the Text Index (Run once)**
+
+Use the migration system (see below) or run directly:
+
+```javascript
+// Creates a text index on all string fields of the 'users' collection
+await db.createIndex('myDb', 'users', { "$**": "text" });
 ```
 
-## Environment Configuration
+**Step 2: Perform the Search**
 
-The application determines its runtime environment (e.g., `production` or `development`) by parsing the command-line arguments passed to the Node.js process. A helper script (`core/helpers/process.helper.js`) checks `process.argv` for keywords like `prod` or `dev`.
+Use the `$text` operator in your query and project the `$meta: "textScore"` to get the relevance score.
 
-Based on the detected environment, the `updateProcessEnv` function loads the corresponding environment file:
+```javascript
+const results = await db.getAll('myDb', 'users',
+  { $text: { $search: "john doe" } }, // The search query
+  {
+    paginate: true,
+    projection: {
+      score: { $meta: "textScore" } // Project the relevance score
+    },
+    sort: {
+      score: { $meta: "textScore" } // Sort by relevance
+    }
+  }
+);
+```
 
-*   If `prod` is detected, it loads variables from **`.env.prod`**.
-*   If `dev` is detected, it loads variables from **`.env.dev`**.
+---
 
-### Environment File Template (`.env.prod`)
+## Database Migration System
 
-You must create a `.env.prod` and/or `.env.dev` file in the root of the `db` directory. Use the following template, replacing the placeholder values with your actual credentials and endpoints.
+This service includes a powerful migration system that allows you to manage and version your database schema directly from your code. Migrations are stored in a `_migrations` collection in your database.
+
+### Core Concepts
+
+*   **Up & Down Scripts**: Each migration consists of an `up` script (to apply the change) and a `down` script (to revert it).
+*   **Code as Data**: The migration scripts are stored as JavaScript code strings in the database, making the system self-contained and portable.
+*   **Snapshots**: You can generate a "snapshot" migration that captures the entire structure (collections and indexes) of your database at a specific point in time.
+
+### Migration API Methods
+
+*   `addMigration(dbName, name, upScript, downScript)`: Registers a new migration.
+*   `getMigrations(dbName)`: Lists all migrations and their status (`pending`, `applied`, `rolled_back`).
+*   `runMigration(dbName, name, direction)`: Executes a specific migration (`up` or `down`).
+*   `createSnapshot(dbName, [snapshotName])`: Creates a snapshot migration of the current DB structure.
+
+### How to Write and Run Migrations
+
+**1. Add a New Migration**
+
+Create a migration to add a new index. The scripts are async functions that receive the `db` instance.
+
+```javascript
+const migrationName = 'add-username-index-to-users';
+const upScript = `
+  async (db) => {
+    await db.collection('users').createIndex({ username: 1 }, { unique: true });
+  }
+`;
+const downScript = `
+  async (db) => {
+    await db.collection('users').dropIndex('username_1');
+  }
+`;
+
+await db.addMigration('myDb', migrationName, upScript, downScript);
+```
+
+**2. Run the Migration**
+
+Execute the `up` script to apply the changes.
+
+```javascript
+await db.runMigration('myDb', 'add-username-index-to-users', 'up');
+// The index is now created and the migration is marked as 'applied'.
+```
+
+**3. Create a Snapshot**
+
+After setting up your collections and indexes, create a snapshot to serve as a baseline for new environments.
+
+```javascript
+await db.createSnapshot('myDb', 'initial-schema-snapshot');
+// A new migration is created containing the 'up' and 'down' scripts
+// to recreate the entire database structure.
+```
+
+You can then run this snapshot migration on a new, empty database to instantly provision its structure.
+
+---
+
+## Project Setup & Deployment
+
+### Environment Configuration
+
+Create a `.env.dev` and/or `.env.prod` file in the project root.
 
 ```env
-# MongoDB Connection
-# This should point to the mongos router of your sharded cluster
+# MongoDB Connection URI
 MONGO_URI=mongodb://your-nas-ip:37017/
 
-# AWS Credentials for SQS
+# AWS Credentials & Region
 AMAZON_SERVICE_ACCESS_KEY_ID=YOUR_AWS_ACCESS_KEY
 AMAZON_SERVICE_SECRET_ACCESS_KEY=YOUR_AWS_SECRET_KEY
 AWS_REGION=us-east-1
+
+# SQS Queue for results (if applicable)
 SQS_QUEUE_URL_RESULTS=https://sqs.us-east-1.amazonaws.com/your-account-id/results
 
-# Redis Connection for Caching
+# Redis Connection (if applicable)
 REDIS_HOST=your-redis-host
 REDIS_PORT=6379
 ```
 
-## `package.json` Scripts
+### `package.json` Scripts
 
-The following scripts are essential for managing and running the application.
+*   `npm run deploy:dev` / `npm run deploy:prod`
+    *   Deploys the service to AWS using the Serverless Framework (SST).
 
-*   `db:seed:prod` or `db:seed:dev`
-    *   **Action**: Runs database migrations and seeds initial data.
-    *   **Usage**: This is a critical first step after setting up your environment. You must run this before starting the application for the first time to ensure the database schema is correct.
+*   `npm run list:api:functions -- --stage <dev|prod>`
+    *   Lists all deployed API Gateway endpoints and their associated Lambda functions for the specified stage.
 
-*   `deploy:prod` or `deploy:dev`
-    *   **Action**: Deploys the service to AWS using the Serverless Framework.
-    *   **Usage**: Use this command to deploy or update the Lambda function and its resources.
-
-## Deployment and Update Flow
-
-The project is now deployed using the Serverless Framework, which simplifies the CI/CD process.
-
-### Deployment
-1.  Install the Serverless Framework globally: `npm install -g serverless`.
-2.  Configure your AWS credentials.
-3.  Run `npm run deploy:prod` or `npm run deploy:dev` to deploy the stack to your AWS account.
-
-### Automated CI/CD Flow with GitHub Actions and Watchtower
-
-The CI/CD workflow should be updated to use Serverless Framework commands.
-
-1.  **GitHub Actions Trigger**: A GitHub Actions workflow is configured to monitor the `main` (for production) and `dev` (for development) branches. When code is pushed to either of these branches, the workflow is triggered.
-
-2.  **Serverless Deploy**: The workflow runs `sls deploy --stage <stage>` to automatically package the code, create/update the Lambda function, and configure the SQS trigger in AWS.
-
-This process ensures that any update pushed to the `main` or `dev` branch is automatically deployed to the corresponding AWS environment. The Watchtower and Docker-based deployment for this service are no longer needed.
-
-## Listing API Gateway Endpoints and Lambda Functions
-
-Para ver los endpoints de API Gateway desplegados y sus funciones Lambda asociadas para un servicio, usa el script `list:api:functions` definido en `package.json`. Este script es genérico y funciona para cualquier proyecto que siga la convención de nombres de SST (nombre del servicio en `package.json` + `-api`).
-
-### Uso
-
-```bash
-npm run list:api:functions [-- --stage <dev|prod>] [-- --profile <aws_profile>] [-- --region <aws_region>]
-```
-
-*   `--stage`: Especifica el entorno de despliegue (`dev` o `prod`). Si no se especifica, se verificarán ambos.
-*   `--profile`: Especifica el perfil de AWS a usar de tu archivo `~/.aws/credentials`. Por defecto es `ale02`.
-*   `--region`: Especifica la región de AWS a usar. Por defecto es `us-east-1`.
-
-**Nota:** Los argumentos para el script bash deben ir después de `--` cuando se ejecuta a través de `npm run`.
-
-### Ejemplos
-
-*   Listar funciones y endpoints para los entornos `dev` y `prod` (por defecto) usando el perfil de AWS `ale02` y la región `us-east-1`:
-    ```bash
-    npm run list:api:functions
-    ```
-
-*   Listar funciones y endpoints solo para el entorno `prod` usando el perfil de AWS `ale02` y la región `us-east-1`:
-    ```bash
-    npm run list:api:functions -- --stage prod
-    ```
-
-*   Listar funciones y endpoints para los entornos `dev` y `prod` usando un perfil de AWS diferente llamado `my-profile` y la región por defecto:
-    ```bash
-    npm run list:api:functions -- --profile my-profile
-    ```
-
-## Actualización de URLs de Servicio en SSM
-
-Para consultar la URL base de un API Gateway desplegado y actualizar un parámetro de AWS SSM con esa URL, usa el script `update:service:url` definido en `package.json`. Este script es útil para mantener actualizadas las URLs de tus servicios en SSM, que pueden ser consumidas por otras aplicaciones.
-
-### Uso
-
-```bash
-npm run update:service:url [-- --var <SSM_VAR_PREFIX>] [-- --stage <dev|prod>] [-- --profile <aws_profile>] [-- --region <aws_region>]
-```
-
-*   `--var`: **(Requerido)** Especifica el prefijo para el nombre del parámetro SSM (ej., `DB_SERVICE`). El nombre final del parámetro en SSM será `[SSM_VAR_PREFIX]_[STAGE_EN_MAYUSCULAS]` (ej., `DB_SERVICE_PROD`).
-*   `--stage`: Especifica el entorno de despliegue (`dev` o `prod`). Si no se especifica, se actualizarán ambos.
-*   `--profile`: Especifica el perfil de AWS a usar de tu archivo `~/.aws/credentials`. Por defecto es `ale02`.
-*   `--region`: Especifica la región de AWS a usar. Por defecto es `us-east-1`.
-
-**Nota:** Los argumentos para el script bash deben ir después de `--` cuando se ejecuta a través de `npm run`.
-
-### Ejemplos
-
-*   Actualizar la URL del servicio `DB_SERVICE` para el entorno `prod` en la región `us-east-1` usando el perfil `ale02`:
-    ```bash
-    npm run update:service:url -- --var DB_SERVICE --stage prod
-    ```
-
-*   Actualizar la URL del servicio `AUTH_SERVICE` para el entorno `dev` en la región `us-east-1` usando un perfil diferente llamado `my-profile`:
-    ```bash
-    npm run update:service:url -- --var AUTH_SERVICE --stage dev --profile my-profile
-    ```
-
-Este script buscará el API Gateway correspondiente a tu proyecto y stage, extraerá su URL base y la guardará en el parámetro SSM especificado.
+*   `npm run update:service:url -- --var <SSM_VAR_PREFIX> --stage <dev|prod>`
+    *   Updates an AWS SSM Parameter with the service's deployed API Gateway URL. This is useful for service discovery.
+    *   Example: `npm run update:service:url -- --var DB_SERVICE --stage prod` will update the `DB_SERVICE_PROD` SSM parameter.

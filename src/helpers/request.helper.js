@@ -7,17 +7,27 @@ import {parseSqsMessage} from "psf-core-node/services/aws/aws-sqs.service.js";
 const logger = logSection('REQUEST-HELPER');
 
 const actions = {
-    aggregate: dataController.aggregate,
-    bulk: dataController.bulk,
-    del: dataController.del,
-    delById: dataController.delById,
+    // Standard CRUD
     get: dataController.get,
     getAll: dataController.getAll,
     getById: dataController.getById,
     set: dataController.set,
     setNew: dataController.setNew,
-    transaction: dataController.transaction,
     upsert: dataController.upsert,
+    del: dataController.del,
+    delById: dataController.delById,
+
+    // Advanced Operations
+    aggregate: dataController.aggregate,
+    bulk: dataController.bulk,
+    transaction: dataController.transaction,
+    createIndex: dataController.createIndex,
+
+    // Migration System
+    addMigration: dataController.addMigration,
+    getMigrations: dataController.getMigrations,
+    runMigration: dataController.runMigration,
+    createSnapshot: dataController.createSnapshot,
 };
 
 /**
