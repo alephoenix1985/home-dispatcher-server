@@ -1,51 +1,39 @@
-import fs from 'fs';
-import path from 'path';
-import { execSync } from 'child_process';
-import dotenv from 'dotenv';
+/**
+ * @file Migration Runner Script
+ * Executes database migrations or seeds initial data.
+ */
 
-// --- Environment Configuration ---
-const nodeEnv = process.env.NODE_ENV || 'development';
-const envPath = path.resolve(process.cwd(), `.env.${nodeEnv}`);
-const defaultEnvPath = path.resolve(process.cwd(), '.env');
+import hsDao from "psf-core-node/daos/hs.dao.js";
+import { logSection } from "psf-core-node/services/logger-node.service.js";
 
-// Load environment-specific .env file if it exists, otherwise load default .env
-if (fs.existsSync(envPath)) {
-    console.log(`Loading environment variables from: ${envPath}`);
-    dotenv.config({ path: envPath });
-} else {
-    console.log(`Loading environment variables from: ${defaultEnvPath}`);
-    dotenv.config({ path: defaultEnvPath });
+const logger = logSection('RUN-MIGRATIONS');
+
+async function seedServices() {
+    logger.info("Seeding services...");
+    
+    const foodSensorService = {
+        name: "food_sensor",
+        settings: {
+            ALERT_DISTANCE: 170
+        }
+    };
+
+    await hsDao.services.upsert({
+        query: { name: "food_sensor" },
+        update: { $set: foodSensorService }
+    });
+
+    logger.info("Services seeded successfully.");
 }
-// --- End Environment Configuration ---
 
-const migrationsDir = path.join(process.cwd(), 'src', 'migrations');
-
-console.log(`Searching for seed files in: ${migrationsDir}`);
-
-try {
-    const allFiles = fs.readdirSync(migrationsDir);
-    const seedFiles = allFiles.filter(file => file.endsWith('.seed.js'));
-
-    if (seedFiles.length === 0) {
-        console.log('No seed files found to execute.');
-        process.exit(0);
+async function main() {
+    try {
+        await seedServices();
+        logger.info("Migration/Seed completed successfully.");
+    } catch (error) {
+        logger.error("Migration/Seed failed:", error);
+        process.exit(1);
     }
-
-    console.log(`Found ${seedFiles.length} seed file(s) to execute:`, seedFiles);
-
-    for (const file of seedFiles) {
-        const filePath = path.join(migrationsDir, file);
-        console.log(`\n--------------------------------------------------`);
-        console.log(`Executing: ${file}`);
-        console.log(`--------------------------------------------------`);
-        // The child process will inherit the environment variables loaded by dotenv
-        execSync(`node ${filePath}`, { stdio: 'inherit' });
-        console.log(`Finished executing: ${file}`);
-    }
-
-    console.log('\nAll seed scripts executed successfully.');
-
-} catch (error) {
-    console.error('\nAn error occurred during the migration process. The process has been stopped.');
-    process.exit(1);
 }
+
+main();

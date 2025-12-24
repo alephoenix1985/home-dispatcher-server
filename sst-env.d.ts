@@ -5,7 +5,7 @@
 
 declare module "sst" {
   export interface Resource {
-    "psf-db-api-prod": {
+    "psf-home-server-api-prod": {
       "type": "sst.aws.ApiGatewayV2"
       "url": string
     }

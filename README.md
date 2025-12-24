@@ -1,201 +1,124 @@
-# PSF Database Service
+# PSF Home Server Service
 
-This project is a decoupled microservice designed to handle all database interactions for the platform. It acts as a secure and centralized data layer, exposing a clear API for other services.
+**Home Server** es un microservicio diseñado para centralizar la comunicación y gestión de dispositivos IoT en el hogar. Actúa como un puente seguro y eficiente entre los dispositivos físicos (como sensores ESP8266) y la infraestructura en la nube, permitiendo la ingesta de telemetría, la configuración dinámica de servicios y la consulta de estados en tiempo real.
 
-## Core Features
+## Visión y Propósito
 
-*   **Decoupled Architecture**: Other services interact with the database through a well-defined API, not directly. This improves security, maintainability, and scalability.
-*   **MongoDB Integration**: Provides a robust `MongoService` class that abstracts MongoDB operations.
-*   **Advanced Querying**: Supports complex queries, pagination, and full-text search with relevance scoring.
-*   **Database Migrations**: Includes a powerful, built-in migration system to manage database schema changes programmatically.
+El objetivo principal de este proyecto es crear un ecosistema de hogar inteligente robusto y escalable, donde la comunicación no dependa de implementaciones *hardcodeadas* en los dispositivos, sino que sea gestionada por una capa de servicio inteligente.
+
+Este servicio no solo almacena datos, sino que **gestiona la verdad única** del estado del hogar, permitiendo que múltiples interfaces (dashboards, aplicaciones móviles) consuman información consistente y actualizada. Además, actúa como un **orquestador de automatización**, integrándose con plataformas como Google Home Scripting para reaccionar ante eventos críticos.
+
+## Arquitectura Técnica
+
+Este servicio está construido sobre una arquitectura **Serverless** utilizando AWS Lambda y SST, lo que garantiza alta disponibilidad y escalabilidad automática.
+
+*   **Ingesta de Datos**: Los dispositivos IoT envían datos a través de endpoints HTTPS seguros.
+*   **Persistencia**: Utiliza MongoDB (a través del servicio `psf-db`) para almacenar telemetría y configuraciones.
+*   **Configuración Dinámica**: Los parámetros operativos de los sensores (como umbrales de alerta) se gestionan desde la base de datos, permitiendo ajustes sin reprogramar el hardware.
+*   **Automatización**: Se integra con Google Home Scripting para disparar acciones domóticas (ej. luces, anuncios) cuando se detectan condiciones específicas.
+*   **Comunicación Asíncrona**: Se integra con AWS SQS para manejar picos de carga y desacoplar procesos.
 
 ---
 
-## MongoService API
+## API Endpoints
 
-The `MongoService` is the heart of this project. It provides a set of methods to interact with the MongoDB database.
+El servicio expone una API RESTful a través de AWS API Gateway.
 
-### Standard CRUD and Querying
+### 1. Ingesta de Telemetría (`POST /telemetry`)
 
-*   `get(dbName, collection, query, options)`: Fetches a single document.
-*   `getAll(dbName, collection, query, options)`: Fetches multiple documents.
-*   `set(dbName, collection, query, data, options)`: Updates a document.
-*   `setNew(dbName, collection, data, options)`: Inserts a new document.
-*   `del(dbName, collection, query, options)`: Deletes a document.
-*   `bulk(dbName, collection, operations, options)`: Performs multiple write operations.
-*   `aggregate(dbName, collection, stages, options)`: Executes an aggregation pipeline.
-*   `createIndex(dbName, collection, indexSpec, options)`: Creates an index on a collection.
+Este endpoint es utilizado por los dispositivos IoT (ej. NodeMCU ESP8266) para reportar sus lecturas.
 
-### Advanced `getAll` with Pagination
+*   **Propósito**: Recibir datos de sensores, validar la información contra la configuración del servicio, actualizar el estado en la base de datos y disparar automatizaciones si es necesario.
+*   **Lógica**:
+    1.  Recibe la lectura del sensor (ej. distancia en cm).
+    2.  Consulta la configuración del servicio (`food_sensor`) para obtener el umbral de alerta (`ALERT_DISTANCE`).
+    3.  Calcula el estado (ej. `is_empty`) basándose en la lectura y el umbral.
+    4.  Realiza un `upsert` en la colección `sensor_telemetry` para mantener el último estado conocido.
+    5.  **Trigger de Automatización**: Si `is_empty` es verdadero, invoca asíncronamente al servicio de Google Home Scripting para notificar el evento `food_level_critical`.
 
-The `getAll` method supports advanced pagination and aggregation. To enable it, pass `paginate: true` in the `options` object.
-
-**Example: Paginated request**
-
-To perform a simple paginated query, send a POST request with the following payload structure:
-
+**Payload de Ejemplo:**
 ```json
 {
-  "action": "getAll",
-  "correlationId": "unique-request-id-123",
-  "payload": {
-    "dbName": "myDatabase",
-    "collection": "users",
-    "query": {
-      "status": "active"
-    },
-    "options": {
-      "paginate": true,
-      "page": 1,
-      "limit": 10,
-      "sort": { "createdAt": -1 }
-    }
+  "distance": 150
+}
+```
+
+**Respuesta Exitosa:**
+```json
+{
+  "status": "success",
+  "received": 150
+}
+```
+
+### 2. Consulta de Estado (`GET /status`)
+
+Este endpoint es consumido por clientes frontend (Dashboards, Apps Móviles) para visualizar el estado actual de los sensores.
+
+*   **Propósito**: Proveer una vista procesada y lista para UI del estado del sensor.
+*   **Lógica**:
+    1.  Consulta el último registro en `sensor_telemetry` para el sensor principal.
+    2.  Retorna un objeto JSON con indicadores de alerta, nivel actual y colores sugeridos para la interfaz.
+
+**Respuesta de Ejemplo:**
+```json
+{
+  "alert": false,
+  "current_level": "150 cm",
+  "last_sync": "2023-10-27T10:00:00.000Z",
+  "ui_color": "GREEN"
+}
+```
+
+---
+
+## Modelo de Datos y Configuración
+
+El servicio utiliza un modelo flexible basado en documentos en MongoDB.
+
+### Colección: `services`
+Almacena la configuración operativa de cada servicio/sensor. Esto permite cambiar el comportamiento del sistema en tiempo de ejecución.
+
+**Ejemplo de Documento (`food_sensor`):**
+```json
+{
+  "name": "food_sensor",
+  "settings": {
+    "ALERT_DISTANCE": 170
   }
 }
 ```
 
-**Expected Response:**
+### Colección: `sensor_telemetry`
+Almacena el estado actual de los sensores. Actúa como el "Single Point of Truth".
 
+**Ejemplo de Documento:**
 ```json
 {
-  "items": [
-    { "_id": "...", "name": "User 1", "status": "active", ... },
-    { "_id": "...", "name": "User 2", "status": "active", ... }
-    // ... up to 10 items
-  ],
-  "total": 150,     // Total count of active users matching the query
-  "page": 1,
-  "limit": 10
+  "sensorId": "main_food",
+  "distance_cm": 150,
+  "is_empty": false,
+  "timestamp": "2023-10-27T10:00:00.000Z"
 }
 ```
 
-### Full-Text Search with Relevance Scoring
-
-To perform a "Google-like" search, you must first create a **text index**. The recommended approach is a wildcard index, which automatically includes all string fields.
-
-**Step 1: Create the Text Index (Run once)**
-
-Use the migration system (see below) or run directly:
-
-```javascript
-// Creates a text index on all string fields of the 'users' collection
-await db.createIndex('myDb', 'users', { "$**": "text" });
-```
-
-**Step 2: Perform the Search**
-
-Use the `$text` operator in your query and project the `$meta: "textScore"` to get the relevance score.
-
-```javascript
-const results = await db.getAll('myDb', 'users',
-  { $text: { $search: "john doe" } }, // The search query
-  {
-    paginate: true,
-    projection: {
-      score: { $meta: "textScore" } // Project the relevance score
-    },
-    sort: {
-      score: { $meta: "textScore" } // Sort by relevance
-    }
-  }
-);
-```
-
 ---
 
-## Database Migration System
+## Despliegue y Gestión
 
-This service includes a powerful migration system that allows you to manage and version your database schema directly from your code. Migrations are stored in a `_migrations` collection in your database.
+### Scripts Principales
 
-### Core Concepts
+*   **`npm run dev`**: Inicia el entorno de desarrollo local con SST.
+*   **`npm run db:seed`**: Ejecuta scripts de migración para inicializar configuraciones por defecto en la base de datos (ej. crear el servicio `food_sensor`).
+*   **`npm run list:api:functions`**: Lista los endpoints desplegados y sus funciones Lambda asociadas.
+*   **`npm run update:service:url`**: Actualiza los parámetros SSM de AWS con la URL del servicio desplegado, facilitando el descubrimiento de servicios.
 
-*   **Up & Down Scripts**: Each migration consists of an `up` script (to apply the change) and a `down` script (to revert it).
-*   **Code as Data**: The migration scripts are stored as JavaScript code strings in the database, making the system self-contained and portable.
-*   **Snapshots**: You can generate a "snapshot" migration that captures the entire structure (collections and indexes) of your database at a specific point in time.
+### Configuración de Entorno
 
-### Migration API Methods
+El proyecto requiere un archivo `.env` (o `.env.dev`/`.env.prod`) con las siguientes variables clave:
 
-*   `addMigration(dbName, name, upScript, downScript)`: Registers a new migration.
-*   `getMigrations(dbName)`: Lists all migrations and their status (`pending`, `applied`, `rolled_back`).
-*   `runMigration(dbName, name, direction)`: Executes a specific migration (`up` or `down`).
-*   `createSnapshot(dbName, [snapshotName])`: Creates a snapshot migration of the current DB structure.
-
-### How to Write and Run Migrations
-
-**1. Add a New Migration**
-
-Create a migration to add a new index. The scripts are async functions that receive the `db` instance.
-
-```javascript
-const migrationName = 'add-username-index-to-users';
-const upScript = `
-  async (db) => {
-    await db.collection('users').createIndex({ username: 1 }, { unique: true });
-  }
-`;
-const downScript = `
-  async (db) => {
-    await db.collection('users').dropIndex('username_1');
-  }
-`;
-
-await db.addMigration('myDb', migrationName, upScript, downScript);
-```
-
-**2. Run the Migration**
-
-Execute the `up` script to apply the changes.
-
-```javascript
-await db.runMigration('myDb', 'add-username-index-to-users', 'up');
-// The index is now created and the migration is marked as 'applied'.
-```
-
-**3. Create a Snapshot**
-
-After setting up your collections and indexes, create a snapshot to serve as a baseline for new environments.
-
-```javascript
-await db.createSnapshot('myDb', 'initial-schema-snapshot');
-// A new migration is created containing the 'up' and 'down' scripts
-// to recreate the entire database structure.
-```
-
-You can then run this snapshot migration on a new, empty database to instantly provision its structure.
-
----
-
-## Project Setup & Deployment
-
-### Environment Configuration
-
-Create a `.env.dev` and/or `.env.prod` file in the project root.
-
-```env
-# MongoDB Connection URI
-MONGO_URI=mongodb://your-nas-ip:37017/
-
-# AWS Credentials & Region
-AMAZON_SERVICE_ACCESS_KEY_ID=YOUR_AWS_ACCESS_KEY
-AMAZON_SERVICE_SECRET_ACCESS_KEY=YOUR_AWS_SECRET_KEY
-AWS_REGION=us-east-1
-
-# SQS Queue for results (if applicable)
-SQS_QUEUE_URL_RESULTS=https://sqs.us-east-1.amazonaws.com/your-account-id/results
-
-# Redis Connection (if applicable)
-REDIS_HOST=your-redis-host
-REDIS_PORT=6379
-```
-
-### `package.json` Scripts
-
-*   `npm run deploy:dev` / `npm run deploy:prod`
-    *   Deploys the service to AWS using the Serverless Framework (SST).
-
-*   `npm run list:api:functions -- --stage <dev|prod>`
-    *   Lists all deployed API Gateway endpoints and their associated Lambda functions for the specified stage.
-
-*   `npm run update:service:url -- --var <SSM_VAR_PREFIX> --stage <dev|prod>`
-    *   Updates an AWS SSM Parameter with the service's deployed API Gateway URL. This is useful for service discovery.
-    *   Example: `npm run update:service:url -- --var DB_SERVICE --stage prod` will update the `DB_SERVICE_PROD` SSM parameter.
+*   `MONGO_URI`: Cadena de conexión a MongoDB.
+*   `AMAZON_SERVICE_SQS_DB_REQUESTS_QUEUE`: Cola SQS para peticiones a la base de datos.
+*   `AMAZON_SERVICE_SQS_HS_REQUESTS_QUEUE`: Cola SQS propia del servicio Home Server.
+*   `GOOGLE_HOME_SCRIPT_ENDPOINT`: Endpoint para disparar eventos en Google Home Scripting.
+*   `GOOGLE_HOME_SCRIPT_KEY`: Clave de autenticación para Google Home Scripting.

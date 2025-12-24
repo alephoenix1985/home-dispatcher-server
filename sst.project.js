@@ -3,7 +3,7 @@
  * This file is imported by the universal sst.config.ts.
  */
 export const config = {
-    appName: 'db',
+    appName: 'home-server',
     stage: 'prod',
     aws: {
         profile: 'ale02',
@@ -11,11 +11,14 @@ export const config = {
     },
     node: {
         routes:{
-            post: ["request"]
+            post: ["telemetry"],
+            get: ["status"]
         },
         variables: [
-            "MONGO_URI",
-            "AMAZON_SERVICE_SQS_DB_REQUESTS_QUEUE"
+            // "AMAZON_SERVICE_SQS_DB_REQUESTS_QUEUE",
+            // "AMAZON_SERVICE_SQS_HS_REQUESTS_QUEUE",
+            // "GOOGLE_HOME_SCRIPT_ENDPOINT",
+            // "GOOGLE_HOME_SCRIPT_KEY"
         ],
     },
 };
