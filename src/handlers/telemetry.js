@@ -19,12 +19,12 @@ export const handler = async (event) => {
     const isEmpty = distance >= alertDistance;
 
     // Persistencia del estado actual (Single Point of Truth)
-    await collection.upsert({
-      query: { sensorId: "main_food" },
+    // We use setNew to create a new record for each telemetry event, relying on automatic createdAt
+    await collection.setNew({
       data: {
-          distance_cm: distance, 
-          is_empty: isEmpty, 
-          timestamp: new Date()
+          sensorId: "main_food",
+          distanceCm: distance, 
+          isEmpty: isEmpty
       }
     });
 

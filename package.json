@@ -7,26 +7,19 @@
     "core"
   ],
   "scripts": {
-    "db:seed": "node scripts/run-migrations.js",
-    "db:seed:dev": "dotenv -e .env.dev -- npm run db:seed",
-    "db:seed:prod": "dotenv -e .env.prod -- npm run db:seed",
-    "db-restore": "node core/scripts/db-restore.js",
-    "db-restore:dev": "node core/scripts/db-restore.js --stage dev",
-    "db-restore:prod": "node core/scripts/db-restore.js --stage prod",
-    "compose-db:generate": "node core/scripts/generate-compose.js",
-    "compose-db:generate:prod": "npm run compose-db:generate -- prod",
-    "compose-db:generate:dev": "npm run compose-db:generate -- dev",
-    "dev": "npm run dev:dev",
-    "dev:dev": "dotenv -e .env.dev -- sst dev --stage dev",
-    "dev:prod": "dotenv -e .env.prod -- sst dev --stage prod --verbose",
-    "list:api:functions": "bash ./core/node/scripts/list_api_functions.sh",
-    "update:service:url": "bash ./core/node/scripts/update_service_url_ssm.sh --var HS_SERVICE",
-    "docker:deploy": "node core/scripts/docker-run.js deploy",
-    "docker:dev": "node core/scripts/docker-run.js dev"
+    "db:seed:dev": "psf db:seed --stage dev",
+    "db:seed:prod": "psf db:seed --stage prod",
+    "db:restore:dev": "psf db:restore --stage dev",
+    "db:restore:prod": "psf db:restore --stage prod",
+    "node:api:functions": "psf node:api:functions",
+    "update:service:url": "psf ssm:upsert --var HS_SERVICE",
+    "docker:deploy": "psf docker:deploy --stage prod",
+    "docker:dev": "psf docker:dev --stage prod"
   },
   "dependencies": {
+    "@aws-sdk/credential-provider-ini": "^3.750.0",
     "psf-core-node": "file:./core/node",
-    "psf-core-shared": "file:./core/shared",
-    "@aws-sdk/credential-provider-ini": "^3.750.0"
-  }
+    "psf-core-shared": "file:./core/shared"
+  },
+  "devDependencies": {}
 }

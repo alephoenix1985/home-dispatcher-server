@@ -20,20 +20,18 @@ async function seedServices() {
 
     await hsDao.services.upsert({
         query: { name: "food_sensor" },
-        update: { $set: foodSensorService }
+        data: { $set: foodSensorService }
     });
 
     logger.info("Services seeded successfully.");
 }
 
-async function main() {
+export async function run() {
     try {
         await seedServices();
         logger.info("Migration/Seed completed successfully.");
     } catch (error) {
         logger.error("Migration/Seed failed:", error);
-        process.exit(1);
+        throw error;
     }
 }
-
-main();
