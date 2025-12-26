@@ -10,7 +10,7 @@ export const config = {
         region: 'us-east-1'
     },
     node: {
-        routes:{
+        routes: {
             post: ["telemetry"],
             get: ["status", "service/{id}"]
         },
@@ -35,7 +35,8 @@ export const config = {
                 query: {
                     key: 'main_food'
                 },
-                existence: true
+                existence: true,
+                runOnFail: 'init-service' // Auto-repair: run migration if validation fails
             }
         ]
     }
