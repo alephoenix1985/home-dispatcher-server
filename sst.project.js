@@ -12,7 +12,7 @@ export const config = {
     node: {
         routes:{
             post: ["telemetry"],
-            get: ["status"]
+            get: ["status", "service/{id}"]
         },
         variables: [
             // "AMAZON_SERVICE_SQS_DB_REQUESTS_QUEUE",
@@ -21,4 +21,22 @@ export const config = {
             // "GOOGLE_HOME_SCRIPT_KEY"
         ],
     },
+    db: {
+        checkIntegrability: true,
+        shutDownIfIntegrabilityFails: true,
+        integrabilityValidations: [
+            {
+                daoName: 'hs',
+                checkSchemes: true // Validate schema for ALL collections in this DAO
+            },
+            {
+                daoName: 'hs',
+                collectionName: 'services',
+                query: {
+                    key: 'main_food'
+                },
+                existence: true
+            }
+        ]
+    }
 };

@@ -11,18 +11,22 @@ export const handler = async (event) => {
   const services = hsDao.services;
 
   try {
-    const { distance } = JSON.parse(event.body);
+    const { distance, serviceId } = JSON.parse(event.body);
+    const targetServiceKey = serviceId || "main_food";
     
-    // Fetch configuration for food sensor
-    const serviceConfig = await services.get({ query: { name: "food_sensor" } });
-    const alertDistance = serviceConfig?.settings?.ALERT_DISTANCE ?? 170;
+    // Fetch configuration for the sensor service using 'key'
+    const serviceConfig = await services.get({ query: { key: targetServiceKey } });
+    
+    // Use ALERT_LOW_LEVEL from settings (matching device code) or default to 170
+    const alertDistance = serviceConfig?.settings?.ALERT_LOW_LEVEL ?? 170;
+    
     const isEmpty = distance >= alertDistance;
 
     // Persistencia del estado actual (Single Point of Truth)
-    // We use setNew to create a new record for each telemetry event, relying on automatic createdAt
+    // We store 'sensorId' in telemetry to link back to the service 'key'
     await collection.setNew({
       data: {
-          sensorId: "main_food",
+          sensorId: targetServiceKey,
           distanceCm: distance, 
           isEmpty: isEmpty
       }
@@ -30,9 +34,8 @@ export const handler = async (event) => {
 
     // Trigger Google Home Scripting if critical level is reached
     if (isEmpty) {
-        // We fire and forget to not block the response to the sensor
         triggerHomeScriptEvent('food_level_critical', { 
-            sensorId: "main_food", 
+            sensorId: targetServiceKey,
             currentLevel: distance,
             threshold: alertDistance
         }).catch(err => console.error("Failed to trigger home automation:", err));
