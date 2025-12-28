@@ -23,7 +23,6 @@
   "dependencies": {
     "@aws-sdk/credential-provider-ini": "^3.750.0",
     "node-broadlink": "^2.4.1",
-    "psf-core-node": "file:./core/node",
     "psf-core-shared": "file:./core/shared",
     "psf-core-next": "file:core/next"
   },
