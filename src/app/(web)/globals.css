@@ -1,0 +1,3 @@
+@import "tailwindcss";
+@source "./safelist.txt";
+@config "../../../tailwind.config.ts";

@@ -9,16 +9,14 @@ export const config = {
         profile: 'ale02',
         region: 'us-east-1'
     },
-    node: {
-        routes: {
-            post: ["telemetry"],
-            get: ["status", "service/{id}"]
-        },
+    next: {
+        domain: 'p-sf.com',
+        subDomain: 'home',
         variables: [
-            // "AMAZON_SERVICE_SQS_DB_REQUESTS_QUEUE",
-            // "AMAZON_SERVICE_SQS_HS_REQUESTS_QUEUE",
-            // "GOOGLE_HOME_SCRIPT_ENDPOINT",
-            // "GOOGLE_HOME_SCRIPT_KEY"
+            "AMAZON_SERVICE_SQS_DB_REQUESTS_QUEUE",
+            "AMAZON_SERVICE_SQS_HS_REQUESTS_QUEUE",
+            "GOOGLE_HOME_SCRIPT_ENDPOINT",
+            "GOOGLE_HOME_SCRIPT_KEY"
         ],
     },
     db: {

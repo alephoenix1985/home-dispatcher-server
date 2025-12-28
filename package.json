@@ -7,6 +7,10 @@
     "core"
   ],
   "scripts": {
+    "dev": "next dev --turbopack",
+    "start": "next start",
+    "build": "echo \"BUILD CWD: $(pwd)\" && next build",
+    "lint": "next lint",
     "db:seed:dev": "psf db:seed --stage dev",
     "db:seed:prod": "psf db:seed --stage prod",
     "db:restore:dev": "psf db:restore --stage dev",
@@ -18,8 +22,13 @@
   },
   "dependencies": {
     "@aws-sdk/credential-provider-ini": "^3.750.0",
+    "node-broadlink": "^2.4.1",
     "psf-core-node": "file:./core/node",
-    "psf-core-shared": "file:./core/shared"
+    "psf-core-shared": "file:./core/shared",
+    "psf-core-next": "file:core/next"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "eslint": "^9",
+    "fs-extra": "^11.2.0"
+  }
 }

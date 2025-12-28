@@ -24,8 +24,6 @@ export async function run() {
         }
     };
 
-    // Use updateServiceSettings custom method or upsert directly
-    // Using upsert directly for clarity in migration
     await hsDao.services.upsert({
         query: { key: "main_food" },
         data: { $set: foodSensorService }
