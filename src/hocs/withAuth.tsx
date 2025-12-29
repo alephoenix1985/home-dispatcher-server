@@ -2,12 +2,12 @@
 
 import React, { ComponentType, useEffect } from "react";
 import { useSession } from "psf-core-next/hooks/session.hook";
-import { usePathname } from "next/navigation";
+import { usePathname, redirect } from "next/navigation";
 import { useLoading } from "psf-core-next/providers/loading.provider";
 
 /**
  * A Higher-Order Component (HOC) that protects routes by checking for a valid user session.
- * If the user is not authenticated, it can redirect them to a login page.
+ * If the user is not authenticated, it redirects them to the central auth service.
  *
  * @template P The props of the wrapped component.
  * @param {ComponentType<P>} WrappedComponent The component to protect.
@@ -17,32 +17,39 @@ const withAuth = <P extends object>(WrappedComponent: ComponentType<P>) => {
   const WithAuthComponent = (props: P) => {
     const { session, isLoading } = useSession();
     const pathname = usePathname();
-    // useLoading from psf-core-next uses updateStep, not startLoading/finishLoading/setProgress directly in the new interface
-    // We need to adapt this to the new interface: updateStep(stepName, isComplete)
     const { updateStep } = useLoading();
 
     useEffect(() => {
-      // Start loading: step 'auth-check' is NOT complete
       updateStep('auth-check', false);
     }, [updateStep]);
 
     useEffect(() => {
       if (!isLoading) {
-        // Finish loading: step 'auth-check' IS complete
         updateStep('auth-check', true);
       }
     }, [isLoading, updateStep]);
 
     if (isLoading) {
-      return null;
+      return null; // Or a skeleton loader
     }
 
-    // Authentication check temporarily disabled
-    /*
     if (!session) {
-      return <div>Redirecting to login...</div>;
+      const authServiceUrl = process.env.NEXT_PUBLIC_AUTH_URL || 'http://localhost:3005';
+      const serviceKey = process.env.NEXT_PUBLIC_SERVICE_KEY || 'home-server';
+      
+      // The URL we want to be returned to after login
+      const forwardUrl = window.location.href;
+
+      const loginUrl = new URL(`${authServiceUrl}/login`);
+      loginUrl.searchParams.set('service', serviceKey);
+      loginUrl.searchParams.set('forwardUrl', forwardUrl);
+      
+      // Use Next.js redirect to navigate to the login page
+      redirect(loginUrl.toString());
+      
+      // Return null while redirecting
+      return null;
     }
-    */
 
     return <WrappedComponent {...(props as P)} />;
   };
