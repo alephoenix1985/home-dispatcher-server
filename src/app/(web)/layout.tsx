@@ -11,17 +11,20 @@ export const metadata: Metadata = {
 };
 
 export default function WebLayout({children}: { children: React.ReactNode }) {
+    const serviceKey = process.env.NEXT_PUBLIC_SERVICE_KEY || 'home-server';
+
     return (
         <html lang="en">
         <body className={inter.className} suppressHydrationWarning={true}>
         <CoreProvider
+            serviceKey={serviceKey}
             translationConfig={{
                 componentsToLoad: ['common', 'home'],
             }}
             loadingConfig={{
+                initialSteps: ['service-config', 'translations'],
                 hideContentWhileLoading: true,
-                loaderContent: <>
-                    Cargando</>
+                loaderContent: <>Cargando...</>
             }}
         >
             {children}
