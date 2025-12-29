@@ -7,7 +7,7 @@
     "core"
   ],
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "dotenv -e .env.prod -- next dev --turbopack",
     "start": "next start",
     "build": "echo \"BUILD CWD: $(pwd)\" && next build",
     "lint": "next lint",

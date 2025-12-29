@@ -10,16 +10,23 @@ export const metadata: Metadata = {
     description: 'IoT Home Automation Hub',
 };
 
-export default function WebLayout({ children }: { children: React.ReactNode }) {
+export default function WebLayout({children}: { children: React.ReactNode }) {
     return (
-        <div className={inter.className}>
-            <CoreProvider
-                translationConfig={{
-                    componentsToLoad: ['common', 'home'],
-                }}
-            >
-                {children}
-            </CoreProvider>
-        </div>
+        <html lang="en">
+        <body className={inter.className} suppressHydrationWarning={true}>
+        <CoreProvider
+            translationConfig={{
+                componentsToLoad: ['common', 'home'],
+            }}
+            loadingConfig={{
+                hideContentWhileLoading: true,
+                loaderContent: <>
+                    Cargando</>
+            }}
+        >
+            {children}
+        </CoreProvider>
+        </body>
+        </html>
     );
 }

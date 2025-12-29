@@ -1,7 +1,10 @@
-export default function HomePage() {
-    return (
-        <main className="flex min-h-screen flex-col items-center justify-center p-24">
-            <h1 className="text-4xl font-bold">Welcome to Home Server</h1>
-        </main>
-    );
+"use client";
+
+import withAuth from "@/hocs/withAuth";
+import { HomePageContent } from "./_components/HomePageContent";
+
+function HomePage() {
+  return <HomePageContent />;
 }
+
+export default withAuth(HomePage);
