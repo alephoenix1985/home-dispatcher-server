@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { SessionInfo } from "./SessionInfo";
+import { SessionInfo } from "psf-core-next/components/session-info/session-info";
 
 export const HomePageContent = (): React.ReactElement => {
   return (
