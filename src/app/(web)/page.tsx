@@ -1,6 +1,6 @@
 "use client";
 
-import withAuth from "@/hocs/withAuth";
+import { withAuth } from "psf-core-next/hocs/withAuth";
 import { HomePageContent } from "./_components/HomePageContent";
 
 function HomePage() {

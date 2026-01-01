@@ -49,3 +49,4 @@ docker-compose.generated.yml
 # --- Generated Docker Files ---
 Dockerfile
 .dockerignore
+core/

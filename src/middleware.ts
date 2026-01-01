@@ -8,16 +8,10 @@ export function middleware(request: NextRequest) {
 
     console.log(`[MIDDLEWARE] Processing request: ${pathname}`);
 
-    // 1. Token Injection Flow (Dev/Cross-Domain)
-    // If a token is present in the URL, we assume it's a redirect from the Auth service.
-    // We set the cookie and redirect to the clean URL.
     if (token) {
-        console.log(`[MIDDLEWARE] Token found in URL. Setting cookie and redirecting.`);
+        console.log(`[MIDDLEWARE] Token found in URL. Value starts with: ${token.substring(0, 10)}...`);
         
-        // Determine the destination: forwardUrl or current path without params
-        // If the path is /api/auth/callback, we probably want to go to root or forwardUrl
         let destinationUrl;
-        
         if (forwardUrl) {
             destinationUrl = new URL(forwardUrl);
         } else if (pathname.startsWith('/api/auth/callback')) {
@@ -26,7 +20,6 @@ export function middleware(request: NextRequest) {
             destinationUrl = new URL(pathname, request.url);
         }
         
-        // Preserve other query params if needed, but remove 'token' and 'forwardUrl'
         searchParams.forEach((value, key) => {
             if (key !== 'token' && key !== 'forwardUrl') {
                 destinationUrl.searchParams.set(key, value);
@@ -37,10 +30,11 @@ export function middleware(request: NextRequest) {
 
         const response = NextResponse.redirect(destinationUrl);
 
-        // Set the session cookie
-        // The name must match what Auth service uses/expects, usually 'na.stk' or configured via env
         const cookieName = 'na.stk'; 
         const isProd = process.env.NODE_ENV === 'production';
+
+        // Delete the cookie first to ensure we are overwriting any existing one (like a Reference Token)
+        response.cookies.delete(cookieName);
 
         response.cookies.set({
             name: cookieName,
@@ -49,7 +43,6 @@ export function middleware(request: NextRequest) {
             secure: isProd,
             path: '/',
             sameSite: 'lax',
-            // No domain set means it applies to the current host (localhost:3000)
             domain: isProd ? '.p-sf.com' : undefined
         });
         
@@ -63,14 +56,6 @@ export function middleware(request: NextRequest) {
 
 export const config = {
     matcher: [
-        /*
-         * Match all request paths except for the ones starting with:
-         * - _next/static (static files)
-         * - _next/image (image optimization files)
-         * - favicon.ico (favicon file)
-         * 
-         * We INCLUDE /api/auth/callback to catch the redirect from Auth service
-         */
         '/((?!_next/static|_next/image|favicon.ico).*)',
     ],
 };
