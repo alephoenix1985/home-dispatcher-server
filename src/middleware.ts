@@ -6,10 +6,10 @@ export function middleware(request: NextRequest) {
     const token = searchParams.get('token');
     const forwardUrl = searchParams.get('forwardUrl');
 
-    console.log(`[MIDDLEWARE] Processing request: ${pathname}`);
+    // console.log(`[MIDDLEWARE] Processing request: ${pathname}`);
 
     if (token) {
-        console.log(`[MIDDLEWARE] Token found in URL. Value starts with: ${token.substring(0, 10)}...`);
+        // console.log(`[MIDDLEWARE] Token found in URL. Value starts with: ${token.substring(0, 10)}...`);
         
         let destinationUrl;
         if (forwardUrl) {
@@ -26,7 +26,7 @@ export function middleware(request: NextRequest) {
             }
         });
 
-        console.log(`[MIDDLEWARE] Destination: ${destinationUrl.toString()}`);
+        // console.log(`[MIDDLEWARE] Destination: ${destinationUrl.toString()}`);
 
         const response = NextResponse.redirect(destinationUrl);
 
@@ -46,7 +46,7 @@ export function middleware(request: NextRequest) {
             domain: isProd ? '.p-sf.com' : undefined
         });
         
-        console.log(`[MIDDLEWARE] Cookie '${cookieName}' set.`);
+        // console.log(`[MIDDLEWARE] Cookie '${cookieName}' set.`);
 
         return response;
     }
